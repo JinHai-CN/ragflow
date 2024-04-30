@@ -22,7 +22,7 @@ class RagTokenizer:
         return str(("DD" + (line[::-1].lower())).encode("utf-8"))[2:-1]
 
     def loadDict_(self, fnm):
-        print("[HUQIE]:Build trie", fnm, file=sys.stderr)
+        print("[Tokenize]: Build trie-tree", fnm, file=sys.stderr)
         try:
             of = open(fnm, "r")
             while True:
@@ -39,7 +39,7 @@ class RagTokenizer:
             self.trie_.save(fnm + ".trie")
             of.close()
         except Exception as e:
-            print("[HUQIE]:Faild to build trie, ", fnm, e, file=sys.stderr)
+            print("[Tokenize]: Fail to build trie-tree, ", fnm, e, file=sys.stderr)
 
     def __init__(self, debug=False):
         self.DEBUG = debug
@@ -55,7 +55,7 @@ class RagTokenizer:
             self.trie_ = datrie.Trie.load(self.DIR_ + ".txt.trie")
             return
         except Exception as e:
-            print("[HUQIE]:Build default trie", file=sys.stderr)
+            print("[Tokenize]: Build default trie-tree", file=sys.stderr)
             self.trie_ = datrie.Trie(string.printable)
 
         self.loadDict_(self.DIR_ + ".txt")
@@ -72,7 +72,7 @@ class RagTokenizer:
         self.loadDict_(fnm)
 
     def _strQ2B(self, ustring):
-        """把字符串全角转半角"""
+        """Convert a string from full width to half width"""
         rstring = ""
         for uchar in ustring:
             inside_code = ord(uchar)
@@ -80,7 +80,7 @@ class RagTokenizer:
                 inside_code = 0x0020
             else:
                 inside_code -= 0xfee0
-            if inside_code < 0x0020 or inside_code > 0x7e:  # 转完之后不是半角字符返回原来的字符
+            if inside_code < 0x0020 or inside_code > 0x7e:  # After the conversion, if it is not a half width character, return to the original character
                 rstring += uchar
             else:
                 rstring += chr(inside_code)
@@ -361,7 +361,7 @@ def is_alphabet(s):
         return False
 
 
-def naiveQie(txt):
+def naive_tokenize(txt):
     tks = []
     for t in txt.split(" "):
         if tks and re.match(r".*[a-zA-Z]$", tks[-1]

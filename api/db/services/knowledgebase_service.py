@@ -73,7 +73,7 @@ class KnowledgebaseService(CommonService):
     def update_parser_config(cls, id, config):
         e, m = cls.get_by_id(id)
         if not e:
-            raise LookupError(f"knowledgebase({id}) not found.")
+            raise LookupError(f"knowledge base({id}) is not found.")
 
         def dfs_update(old, new):
             for k, v in new.items():

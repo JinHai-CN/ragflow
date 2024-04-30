@@ -46,7 +46,7 @@ def chunk(filename, binary, tenant_id, lang, callback=None, **kwargs):
     try:
         callback(0.4, "Use CV LLM to describe the picture.")
         ans = cv_mdl.describe(binary)
-        callback(0.8, "CV LLM respoond: %s ..." % ans[:32])
+        callback(0.8, "CV LLM respond: %s ..." % ans[:32])
         txt += "\n" + ans
         tokenize(doc, txt, eng)
         return [doc]

@@ -77,7 +77,7 @@ class FileService(CommonService):
         if file.count():
             e, file = cls.get_by_id(file[0].id)
             if not e:
-                raise RuntimeError("Database error (File retrieval)!")
+                raise RuntimeError("Database error (file retrieval)!")
             return file
         return None
 
@@ -155,7 +155,7 @@ class FileService(CommonService):
 
         e, file = cls.get_by_id(file_id)
         if not e:
-            raise RuntimeError("Database error (File retrieval)!")
+            raise RuntimeError("Database error (file retrieval)!")
         return file
 
     @classmethod
@@ -165,9 +165,9 @@ class FileService(CommonService):
         if file.count():
             e, file = cls.get_by_id(file[0].parent_id)
             if not e:
-                raise RuntimeError("Database error (File retrieval)!")
+                raise RuntimeError("Database error (file retrieval)!")
         else:
-            raise RuntimeError("Database error (File doesn't exist)!")
+            raise RuntimeError("Database error (file doesn't exist)!")
         return file
 
     @classmethod
@@ -189,10 +189,10 @@ class FileService(CommonService):
     @DB.connection_context()
     def insert(cls, file):
         if not cls.save(**file):
-            raise RuntimeError("Database error (File)!")
+            raise RuntimeError("Database error (file)!")
         e, file = cls.get_by_id(file["id"])
         if not e:
-            raise RuntimeError("Database error (File retrieval)!")
+            raise RuntimeError("Database error (file retrieval)!")
         return file
 
     @classmethod
@@ -217,7 +217,7 @@ class FileService(CommonService):
                                             & (cls.model.id == folder_id)).execute(),
         except Exception as e:
             print(e)
-            raise RuntimeError("Database error (File retrieval)!")
+            raise RuntimeError("Database error (file retrieval)!")
 
     @classmethod
     @DB.connection_context()
