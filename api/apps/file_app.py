@@ -137,7 +137,7 @@ def create():
     try:
         if not FileService.is_parent_folder_exist(pf_id):
             return get_json_result(
-                data=False, retmsg="Parent Folder Doesn't Exist!", retcode=RetCode.OPERATING_ERROR)
+                data=False, retmsg="Parent folder doesn't exist!", retcode=RetCode.OPERATING_ERROR)
         if FileService.query(name=req["name"], parent_id=pf_id):
             return get_data_error_result(
                 retmsg="Duplicated folder name in the same folder.")
@@ -247,7 +247,7 @@ def rm():
         for file_id in file_ids:
             e, file = FileService.get_by_id(file_id)
             if not e:
-                return get_data_error_result(retmsg="File or Folder not found!")
+                return get_data_error_result(retmsg="File or folder not found!")
             if not file.tenant_id:
                 return get_data_error_result(retmsg="Tenant not found!")
 
@@ -262,7 +262,7 @@ def rm():
             else:
                 if not FileService.delete(file):
                     return get_data_error_result(
-                        retmsg="Database error (File removal)!")
+                        retmsg="Database error (file removal)!")
 
             # delete file2document
             informs = File2DocumentService.get_by_file_id(file_id)
@@ -310,14 +310,14 @@ def rename():
         if not FileService.update_by_id(
                 req["file_id"], {"name": req["name"]}):
             return get_data_error_result(
-                retmsg="Database error (File rename)!")
+                retmsg="Database error (file rename)!")
 
         informs = File2DocumentService.get_by_file_id(req["file_id"])
         if informs:
             if not DocumentService.update_by_id(
                     informs[0].document_id, {"name": req["name"]}):
                 return get_data_error_result(
-                    retmsg="Database error (Document rename)!")
+                    retmsg="Database error (document rename)!")
 
         return get_json_result(data=True)
     except Exception as e:

@@ -67,17 +67,17 @@ def update():
         if not KnowledgebaseService.query(
                 created_by=current_user.id, id=req["kb_id"]):
             return get_json_result(
-                data=False, retmsg=f'Only owner of knowledgebase authorized for this operation.', retcode=RetCode.OPERATING_ERROR)
+                data=False, retmsg=f'Only owner of knowledge base authorized for this operation.', retcode=RetCode.OPERATING_ERROR)
 
         e, kb = KnowledgebaseService.get_by_id(req["kb_id"])
         if not e:
             return get_data_error_result(
-                retmsg="Can't find this knowledgebase!")
+                retmsg="Can't find this knowledge base.")
 
         if req["name"].lower() != kb.name.lower() \
                 and len(KnowledgebaseService.query(name=req["name"], tenant_id=current_user.id, status=StatusEnum.VALID.value)) > 1:
             return get_data_error_result(
-                retmsg="Duplicated knowledgebase name.")
+                retmsg="Duplicated knowledge base name.")
 
         del req["kb_id"]
         if not KnowledgebaseService.update_by_id(kb.id, req):
@@ -86,7 +86,7 @@ def update():
         e, kb = KnowledgebaseService.get_by_id(kb.id)
         if not e:
             return get_data_error_result(
-                retmsg="Database error (Knowledgebase rename)!")
+                retmsg="Database error (knowledge base rename)")
 
         return get_json_result(data=kb.to_json())
     except Exception as e:
@@ -101,7 +101,7 @@ def detail():
         kb = KnowledgebaseService.get_detail(kb_id)
         if not kb:
             return get_data_error_result(
-                retmsg="Can't find this knowledgebase!")
+                retmsg="Can't find this knowledge base!")
         return get_json_result(data=kb)
     except Exception as e:
         return server_error_response(e)
@@ -133,7 +133,7 @@ def rm():
                 created_by=current_user.id, id=req["kb_id"])
         if not kbs:
             return get_json_result(
-                data=False, retmsg=f'Only owner of knowledgebase authorized for this operation.', retcode=RetCode.OPERATING_ERROR)
+                data=False, retmsg=f'Only owner of knowledge base authorized for this operation.', retcode=RetCode.OPERATING_ERROR)
 
         for doc in DocumentService.query(kb_id=req["kb_id"]):
             ELASTICSEARCH.deleteByQuery(
@@ -143,12 +143,12 @@ def rm():
                 doc.id, doc.kb_id, doc.token_num * -1, doc.chunk_num * -1, 0)
             if not DocumentService.delete(doc):
                 return get_data_error_result(
-                    retmsg="Database error (Document removal)!")
+                    retmsg="Database error (document removal)!")
 
         if not KnowledgebaseService.update_by_id(
                 req["kb_id"], {"status": StatusEnum.INVALID.value}):
             return get_data_error_result(
-                retmsg="Database error (Knowledgebase removal)!")
+                retmsg="Database error (knowledge base removal)!")
         return get_json_result(data=True)
     except Exception as e:
         return server_error_response(e)

@@ -63,7 +63,7 @@ def upload():
         try:
             e, kb = KnowledgebaseService.get_by_id(kb_id)
             if not e:
-                raise LookupError("Can't find this knowledgebase!")
+                raise LookupError("Can't find this knowledge base!")
             MAX_FILE_NUM_PER_USER = int(os.environ.get('MAX_FILE_NUM_PER_USER', 0))
             if MAX_FILE_NUM_PER_USER > 0 and DocumentService.get_doc_count(kb.tenant_id) >= MAX_FILE_NUM_PER_USER:
                 raise RuntimeError("Exceed the maximum file number of a free user!")
@@ -120,11 +120,11 @@ def create():
         e, kb = KnowledgebaseService.get_by_id(kb_id)
         if not e:
             return get_data_error_result(
-                retmsg="Can't find this knowledgebase!")
+                retmsg="Can't find this knowledge base!")
 
         if DocumentService.query(name=req["name"], kb_id=kb_id):
             return get_data_error_result(
-                retmsg="Duplicated document name in the same knowledgebase.")
+                retmsg="Duplicated document name in the same knowledge base.")
 
         doc = DocumentService.insert({
             "id": get_uuid(),

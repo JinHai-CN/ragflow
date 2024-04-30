@@ -44,7 +44,7 @@ def login():
     users = UserService.query(email=email)
     if not users:
         return get_json_result(
-            data=False, retcode=RetCode.AUTHENTICATION_ERROR, retmsg=f'This Email is not registered!')
+            data=False, retcode=RetCode.AUTHENTICATION_ERROR, retmsg=f'This e-mail is not registered!')
 
     password = request.json.get('password')
     try:
@@ -65,7 +65,7 @@ def login():
         return cors_reponse(data=response_data, auth=user.get_id(), retmsg=msg)
     else:
         return get_json_result(data=False, retcode=RetCode.AUTHENTICATION_ERROR,
-                               retmsg='Email and Password do not match!')
+                               retmsg='E-mail and password is not matched!')
 
 
 @manager.route('/github_callback', methods=['GET'])
@@ -258,7 +258,7 @@ def user_add():
     req = request.json
     if UserService.query(email=req["email"]):
         return get_json_result(
-            data=False, retmsg=f'Email: {req["email"]} has already registered!', retcode=RetCode.OPERATING_ERROR)
+            data=False, retmsg=f'E-mail: {req["email"]} has already registered!', retcode=RetCode.OPERATING_ERROR)
     if not re.match(r"^[\w\._-]+@([\w_-]+\.)+[\w-]{2,4}$", req["email"]):
         return get_json_result(data=False, retmsg=f'Invaliad e-mail: {req["email"]}!',
                                retcode=RetCode.OPERATING_ERROR)
