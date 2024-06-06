@@ -375,7 +375,7 @@ export default {
       fullScreenDescription: '將以下iframe嵌入您的網站處於所需位置',
       partialTitle: '部分嵌入',
       extensionTitle: 'Chrome 插件',
-      tokenError: '請先創建 Api Token!',
+      tokenError: '請先創建 API Token!',
       searching: '搜索中',
     },
     setting: {
