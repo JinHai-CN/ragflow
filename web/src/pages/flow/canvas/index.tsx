@@ -8,7 +8,6 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-import { NodeContextMenu, useHandleNodeContextMenu } from './context-menu';
 import { ButtonEdge } from './edge';
 
 import FlowDrawer from '../flow-drawer';
@@ -18,24 +17,23 @@ import {
   useSelectCanvasData,
   useShowDrawer,
 } from '../hooks';
-import { TextUpdaterNode } from './node';
+import { RagNode } from './node';
 
 import ChatDrawer from '../chat/drawer';
 import styles from './index.less';
 
-const nodeTypes = { textUpdater: TextUpdaterNode };
+const nodeTypes = { ragNode: RagNode };
 
 const edgeTypes = {
   buttonEdge: ButtonEdge,
 };
 
 interface IProps {
-  sideWidth: number;
   chatDrawerVisible: boolean;
   hideChatDrawer(): void;
 }
 
-function FlowCanvas({ sideWidth, chatDrawerVisible, hideChatDrawer }: IProps) {
+function FlowCanvas({ chatDrawerVisible, hideChatDrawer }: IProps) {
   const {
     nodes,
     edges,
@@ -45,8 +43,6 @@ function FlowCanvas({ sideWidth, chatDrawerVisible, hideChatDrawer }: IProps) {
     onSelectionChange,
   } = useSelectCanvasData();
 
-  const { ref, menu, onNodeContextMenu, onPaneClick } =
-    useHandleNodeContextMenu(sideWidth);
   const { drawerVisible, hideDrawer, showDrawer, clickedNode } =
     useShowDrawer();
 
@@ -64,18 +60,15 @@ function FlowCanvas({ sideWidth, chatDrawerVisible, hideChatDrawer }: IProps) {
   return (
     <div className={styles.canvasWrapper}>
       <ReactFlow
-        ref={ref}
         connectionMode={ConnectionMode.Loose}
         nodes={nodes}
         onNodesChange={onNodesChange}
-        onNodeContextMenu={onNodeContextMenu}
         edges={edges}
         onEdgesChange={onEdgesChange}
         fitView
         onConnect={onConnect}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        onPaneClick={onPaneClick}
         onDrop={onDrop}
         onDragOver={onDragOver}
         onNodeClick={onNodeClick}
@@ -95,9 +88,6 @@ function FlowCanvas({ sideWidth, chatDrawerVisible, hideChatDrawer }: IProps) {
       >
         <Background />
         <Controls />
-        {Object.keys(menu).length > 0 && (
-          <NodeContextMenu onClick={onPaneClick} {...(menu as any)} />
-        )}
       </ReactFlow>
       <FlowDrawer
         node={clickedNode}

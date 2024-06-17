@@ -1,19 +1,22 @@
-import { ReactComponent as MoreIcon } from '@/assets/svg/more.svg';
 import { useShowDeleteConfirm } from '@/hooks/commonHooks';
-import { DeleteOutlined } from '@ant-design/icons';
+import { DeleteOutlined, MoreOutlined } from '@ant-design/icons';
 import { Dropdown, MenuProps, Space } from 'antd';
 import { useTranslation } from 'react-i18next';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import styles from './index.less';
 
 interface IProps {
-  deleteItem: () => Promise<any>;
+  deleteItem: () => Promise<any> | void;
+  iconFontSize?: number;
+  items?: MenuProps['items'];
 }
 
 const OperateDropdown = ({
   deleteItem,
   children,
+  iconFontSize = 30,
+  items: otherItems = [],
 }: React.PropsWithChildren<IProps>) => {
   const { t } = useTranslation();
   const showDeleteConfirm = useShowDeleteConfirm();
@@ -30,17 +33,20 @@ const OperateDropdown = ({
     }
   };
 
-  const items: MenuProps['items'] = [
-    {
-      key: '1',
-      label: (
-        <Space>
-          {t('common.delete')}
-          <DeleteOutlined />
-        </Space>
-      ),
-    },
-  ];
+  const items: MenuProps['items'] = useMemo(() => {
+    return [
+      {
+        key: '1',
+        label: (
+          <Space>
+            {t('common.delete')}
+            <DeleteOutlined />
+          </Space>
+        ),
+      },
+      ...otherItems,
+    ];
+  }, [t, otherItems]);
 
   return (
     <Dropdown
@@ -51,7 +57,10 @@ const OperateDropdown = ({
     >
       {children || (
         <span className={styles.delete}>
-          <MoreIcon />
+          <MoreOutlined
+            rotate={90}
+            style={{ fontSize: iconFontSize, color: 'gray', cursor: 'pointer' }}
+          />
         </span>
       )}
     </Dropdown>

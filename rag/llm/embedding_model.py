@@ -15,7 +15,6 @@
 #
 import re
 from typing import Optional
-
 import requests
 from huggingface_hub import snapshot_download
 from zhipuai import ZhipuAI
@@ -26,9 +25,8 @@ import dashscope
 from openai import OpenAI
 from FlagEmbedding import FlagModel
 import torch
-import asyncio
 import numpy as np
-
+import asyncio
 from api.utils.file_utils import get_home_cache_dir
 from rag.utils import num_tokens_from_string, truncate
 
@@ -317,12 +315,12 @@ class InfinityEmbed(Base):
             engine_kwargs: dict = {},
             key = None,
     ):
-        
+
         from infinity_emb import EngineArgs
         from infinity_emb.engine import AsyncEngineArray
-        
+
         self._default_model = model_names[0]
-        self.engine_array = AsyncEngineArray.from_args([EngineArgs(model_name_or_path = model_name, **engine_kwargs) for model_name in model_names])  
+        self.engine_array = AsyncEngineArray.from_args([EngineArgs(model_name_or_path = model_name, **engine_kwargs) for model_name in model_names])
 
     async def _embed(self, sentences: list[str], model_name: str = ""):
         if not model_name:
@@ -346,3 +344,23 @@ class InfinityEmbed(Base):
         # Using the internal tokenizer to encode the texts and get the total
         # number of tokens
         return self.encode([text])
+
+
+class MistralEmbed(Base):
+    def __init__(self, key, model_name="mistral-embed",
+                 base_url=None):
+        from mistralai.client import MistralClient
+        self.client = MistralClient(api_key=key)
+        self.model_name = model_name
+
+    def encode(self, texts: list, batch_size=32):
+        texts = [truncate(t, 8196) for t in texts]
+        res = self.client.embeddings(input=texts,
+                                            model=self.model_name)
+        return np.array([d.embedding for d in res.data]
+                        ), res.usage.total_tokens
+
+    def encode_queries(self, text):
+        res = self.client.embeddings(input=[truncate(text, 8196)],
+                                            model=self.model_name)
+        return np.array(res.data[0].embedding), res.usage.total_tokens
