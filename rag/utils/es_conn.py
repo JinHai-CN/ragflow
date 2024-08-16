@@ -24,21 +24,23 @@ class ESConnection:
             raise Exception("Can't connect to ES cluster")
 
     def conn(self):
-        for _ in range(10):
+        es_hosts = settings.ES["hosts"].split(",")
+        for idx in range(10):
             try:
                 self.es = Elasticsearch(
-                    settings.ES["hosts"].split(","),
+                    es_hosts,
                     basic_auth=(settings.ES["username"], settings.ES["password"]) if "username" in settings.ES and "password" in settings.ES else None,
                     verify_certs=False,
                     timeout=600
                 )
                 if self.es:
                     self.info = self.es.info()
-                    es_logger.info("Connect to es.")
+                    es_logger.info("Connect to Elasticsearch.")
                     break
             except Exception as e:
-                es_logger.error("Fail to connect to es: " + str(e))
+                es_logger.error(f"#{idx} Attempt to connect to Elasticsearch {es_hosts}, " + str(e))
                 time.sleep(1)
+        es_logger.error(f"Please check if Elasticsearch is started with {es_hosts}")
 
     def version(self):
         v = self.info.get("version", {"number": "5.6"})
