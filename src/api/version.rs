@@ -22,16 +22,18 @@
  * EXPRESS OR IMPLIED.
  */
 
-//! RAGFlow API Server (Rust implementation)
-//! 
-//! This crate provides a high-performance Rust implementation of the RAGFlow API server.
-//! It is designed to be a drop-in replacement for the Python API server.
+use axum::response::{IntoResponse, Json};
+use serde_json::json;
 
-pub mod api;
-pub mod config;
-pub mod server;
-pub mod utils;
-
-// Re-export commonly used types
-pub use config::Config;
-pub use server::Server;
+/// Version information endpoint
+pub async fn get_version() -> impl IntoResponse {
+    Json(json!({
+        "code": 0,
+        "message": "success",
+        "data": {
+            "version": env!("CARGO_PKG_VERSION"),
+            "name": "RAGFlow",
+            "description": "Open-source RAG engine based on deep document understanding"
+        }
+    }))
+}

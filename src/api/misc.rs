@@ -28,28 +28,6 @@ use axum::{
 };
 use serde_json::json;
 
-/// Health check endpoint
-pub async fn health_check() -> impl IntoResponse {
-    Json(json!({
-        "code": 0,
-        "message": "success",
-        "data": "OK"
-    }))
-}
-
-/// Version information endpoint
-pub async fn get_version() -> impl IntoResponse {
-    Json(json!({
-        "code": 0,
-        "message": "success",
-        "data": {
-            "version": env!("CARGO_PKG_VERSION"),
-            "name": "RAGFlow",
-            "description": "Open-source RAG engine based on deep document understanding"
-        }
-    }))
-}
-
 /// Root endpoint
 pub async fn root() -> impl IntoResponse {
     "RAGFlow API Server"
@@ -67,38 +45,6 @@ pub async fn api_docs() -> impl IntoResponse {
                 "description": "API documentation will be available soon",
                 "version": "1.0.0"
             }
-        }
-    }))
-}
-
-/// Knowledge base endpoints placeholder
-pub async fn list_knowledge_bases() -> impl IntoResponse {
-    Json(json!({
-        "code": 0,
-        "message": "success",
-        "data": []
-    }))
-}
-
-/// Chat endpoints placeholder
-pub async fn chat_completions() -> impl IntoResponse {
-    Json(json!({
-        "code": 0,
-        "message": "success",
-        "data": {
-            "message": "Chat endpoint is not implemented yet"
-        }
-    }))
-}
-
-/// Document upload endpoint placeholder
-pub async fn upload_document() -> impl IntoResponse {
-    Json(json!({
-        "code": 0,
-        "message": "success",
-        "data": {
-            "document_id": "placeholder",
-            "status": "processing"
         }
     }))
 }

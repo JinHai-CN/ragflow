@@ -39,8 +39,8 @@ use std::sync::Arc;
 use tokio::signal;
 use tokio::sync::oneshot;
 
+use crate::api::routes;
 use crate::config::Config;
-use crate::routes;
 
 // Application state for Axum
 #[derive(Clone)]

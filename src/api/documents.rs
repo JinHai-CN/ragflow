@@ -22,16 +22,17 @@
  * EXPRESS OR IMPLIED.
  */
 
-//! RAGFlow API Server (Rust implementation)
-//! 
-//! This crate provides a high-performance Rust implementation of the RAGFlow API server.
-//! It is designed to be a drop-in replacement for the Python API server.
+use axum::response::{IntoResponse, Json};
+use serde_json::json;
 
-pub mod api;
-pub mod config;
-pub mod server;
-pub mod utils;
-
-// Re-export commonly used types
-pub use config::Config;
-pub use server::Server;
+/// Document upload endpoint placeholder
+pub async fn upload_document() -> impl IntoResponse {
+    Json(json!({
+        "code": 0,
+        "message": "success",
+        "data": {
+            "document_id": "placeholder",
+            "status": "processing"
+        }
+    }))
+}

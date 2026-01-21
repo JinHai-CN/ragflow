@@ -42,8 +42,8 @@ use tower_http::{
     cors::{Any, CorsLayer},
     trace::TraceLayer,
 };
+use ragflow::api::routes;
 use ragflow::config::Config;
-use ragflow::routes;
 
 // Command line arguments
 #[derive(Parser, Debug)]

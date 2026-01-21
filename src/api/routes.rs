@@ -22,16 +22,13 @@
  * EXPRESS OR IMPLIED.
  */
 
-//! RAGFlow API Server (Rust implementation)
-//! 
-//! This crate provides a high-performance Rust implementation of the RAGFlow API server.
-//! It is designed to be a drop-in replacement for the Python API server.
+//! API routes facade module.
+//!
+//! This module re-exports all endpoint handlers from their respective modules.
 
-pub mod api;
-pub mod config;
-pub mod server;
-pub mod utils;
-
-// Re-export commonly used types
-pub use config::Config;
-pub use server::Server;
+pub use super::health::health_check;
+pub use super::version::get_version;
+pub use super::knowledge_bases::list_knowledge_bases;
+pub use super::chat::chat_completions;
+pub use super::documents::upload_document;
+pub use super::misc::{api_docs, not_found, root};
