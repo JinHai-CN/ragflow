@@ -138,7 +138,14 @@ async fn init_app(debug: bool) -> anyhow::Result<AppState> {
         env::set_var("RUST_LOG", "info");
     }
     env_logger::init();
-    
+
+    // Initialize SystemConfig singleton if not already initialized
+    if !ragflow::SystemConfig::is_initialized() {
+        ragflow::SystemConfig::init()?;
+    }
+    let system_config = ragflow::SystemConfig::instance()?;
+    system_config.print_all();
+
     // Display banner
     display_banner();
     
@@ -146,16 +153,16 @@ async fn init_app(debug: bool) -> anyhow::Result<AppState> {
     info!("Debug mode: {}", debug);
     info!("Host IP: 0.0.0.0 (configurable via --host)");
     info!("Port: 9380 (configurable via --port)");
-    
+
     // Load configuration from environment
-    let config = Config::from_env()?;
+    let env_config = Config::from_env()?;
     
     // Initialize application state
-    let db = config.create_database_connection().await?;
+    let db = env_config.create_database_connection().await?;
     let state = AppState {
         debug_mode: debug,
         server_start_time: std::time::Instant::now(),
-        config,
+        config: env_config,
         db,
     };
     

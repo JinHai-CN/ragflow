@@ -223,7 +223,6 @@ impl SystemConfig {
     pub fn print_all(&self) {
         println!("=== Service Configuration ===");
         self.print_value(&self.value, 0);
-        println!("=============================");
     }
 
     /// Recursively print YAML value with indentation
