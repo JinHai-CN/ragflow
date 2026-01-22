@@ -130,7 +130,7 @@ async fn update_progress_task(stop_signal: Arc<AtomicBool>) {
 }
 
 // Initialize application
-async fn init_app(debug: bool) -> anyhow::Result<AppState> {
+fn init_app(debug: bool) -> anyhow::Result<AppState> {
     // Initialize logging
     if debug {
         env::set_var("RUST_LOG", "debug");
@@ -165,12 +165,12 @@ async fn init_app(debug: bool) -> anyhow::Result<AppState> {
     let env_config = Config::from_env()?;
 
     // Initialize application state
-    let db = env_config.create_database_connection().await?;
+    // let db = env_config.create_database_connection().await?;
     let state = AppState {
         debug_mode: debug,
         server_start_time: std::time::Instant::now(),
         config: env_config,
-        db,
+        // db,
     };
 
     // TODO: Initialize database connection
@@ -192,11 +192,13 @@ fn create_router(state: AppState) -> Router {
     Router::new()
         .route("/", get(routes::root))
         .route("/health", get(routes::health_check))
+        .route("/api/v1/health", get(routes::health_check))
         .route("/version", get(routes::get_version))
         .route("/apidocs", get(routes::api_docs))
         .route("/api/v1/knowledge-bases", get(routes::list_knowledge_bases))
         .route("/api/v1/chat/completions", post(routes::chat_completions))
         .route("/api/v1/documents", post(routes::upload_document))
+        .route("/v1/system/ping", get(routes::ping))
         // Fallback for 404
         .fallback(routes::not_found)
         // Add middleware layers
@@ -234,7 +236,7 @@ async fn main() -> anyhow::Result<()> {
         .unwrap_or(args.port);
 
     // Initialize application
-    let app_state = init_app(args.debug).await?;
+    let app_state = init_app(args.debug)?;
 
     // Handle --init-superuser flag
     if args.init_superuser {

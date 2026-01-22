@@ -50,7 +50,7 @@ pub struct AppState {
     pub debug_mode: bool,
     pub server_start_time: std::time::Instant,
     pub config: Config,
-    pub db: DatabaseConnection,
+    // pub db: DatabaseConnection,
 }
 
 /// Main server structure
@@ -69,12 +69,12 @@ impl Server {
         info!("Starting RAGFlow server on {}", self.config.server_addr());
         
         // Initialize application state
-        let db = self.config.create_database_connection().await?;
+        // let db = self.config.create_database_connection().await?;
         let app_state = AppState {
             debug_mode: false, // will be set from config
             server_start_time: std::time::Instant::now(),
             config: self.config.clone(),
-            db,
+            // db,
         };
         
         // Create router
