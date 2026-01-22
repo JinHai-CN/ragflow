@@ -36,4 +36,3 @@ pub mod utils;
 // Re-export commonly used types
 pub use config::Config;
 pub use config::SystemConfig;
-pub use server::Server;
