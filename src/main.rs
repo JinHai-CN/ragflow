@@ -151,8 +151,11 @@ async fn init_app(debug: bool) -> anyhow::Result<AppState> {
     
     // Show configuration
     info!("Debug mode: {}", debug);
-    info!("Host IP: 0.0.0.0 (configurable via --host)");
-    info!("Port: 9380 (configurable via --port)");
+    // Get host and port from configuration for display
+    let host = system_config.get::<String>("ragflow.host").unwrap_or("0.0.0.0".to_string());
+    let port = system_config.get::<u16>("ragflow.http_port").unwrap_or(9380);
+    info!("Host IP: {} (from config file)", host);
+    info!("Port: {} (from config file)", port);
 
     // Load configuration from environment
     let env_config = Config::from_env()?;
@@ -212,6 +215,16 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     }
     
+    // Initialize SystemConfig singleton if not already initialized
+    if !ragflow::SystemConfig::is_initialized() {
+        ragflow::SystemConfig::init()?;
+    }
+    let system_config = ragflow::SystemConfig::instance()?;
+    
+    // Determine host and port from configuration file, fallback to command line arguments
+    let host = system_config.get::<String>("ragflow.host").unwrap_or(args.host);
+    let port = system_config.get::<u16>("ragflow.http_port").unwrap_or(args.port);
+    
     // Initialize application
     let app_state = init_app(args.debug).await?;
     
@@ -230,14 +243,14 @@ async fn main() -> anyhow::Result<()> {
         update_progress_task(stop_signal_for_task).await;
     });
     
-    // Configure HTTP server
-    info!("Starting HTTP server on {}:{}", args.host, args.port);
+    // Configure HTTP server using configuration values
+    info!("Starting HTTP server on {}:{} (from config file)", host, port);
     
     // Create router
     let router = create_router(app_state);
     
     // Bind and serve
-    let addr = format!("{}:{}", args.host, args.port);
+    let addr = format!("{}:{}", host, port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     info!("Server listening on http://{}", addr);
     
