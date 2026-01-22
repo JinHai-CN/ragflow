@@ -34,22 +34,22 @@ use std::sync::OnceLock;
 pub struct Config {
     /// Server host IP
     pub host: String,
-    
+
     /// Server port
     pub port: u16,
-    
+
     /// Debug mode
     pub debug: bool,
-    
+
     /// Database connection string
     pub database_url: String,
-    
+
     /// Redis connection string
     pub redis_url: String,
-    
+
     /// Secret key for JWT tokens
     pub secret_key: String,
-    
+
     /// Maximum content length for uploads
     pub max_content_length: usize,
 }
@@ -63,21 +63,21 @@ impl Config {
             .parse::<u16>()
             .unwrap_or(9380);
         let debug = env::var("DEBUG").unwrap_or_else(|_| "false".to_string()) == "true";
-        
+
         let database_url = env::var("DATABASE_URL")
             .unwrap_or_else(|_| "mysql://ragflow:ragflow@localhost:3306/ragflow".to_string());
-        
-        let redis_url = env::var("REDIS_URL")
-            .unwrap_or_else(|_| "redis://localhost:6379".to_string());
-        
-        let secret_key = env::var("SECRET_KEY")
-            .unwrap_or_else(|_| "your-secret-key-change-this".to_string());
-        
+
+        let redis_url =
+            env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6379".to_string());
+
+        let secret_key =
+            env::var("SECRET_KEY").unwrap_or_else(|_| "your-secret-key-change-this".to_string());
+
         let max_content_length = env::var("MAX_CONTENT_LENGTH")
             .unwrap_or_else(|_| "1073741824".to_string()) // 1GB default
             .parse::<usize>()
             .unwrap_or(1073741824);
-        
+
         Ok(Self {
             host,
             port,
@@ -88,19 +88,19 @@ impl Config {
             max_content_length,
         })
     }
-    
+
     /// Get the server address (host:port)
     pub fn server_addr(&self) -> String {
         format!("{}:{}", self.host, self.port)
     }
-    
+
     /// Create a database connection pool
     pub async fn create_database_connection(&self) -> anyhow::Result<DatabaseConnection> {
         Database::connect(&self.database_url)
             .await
             .map_err(|e| anyhow::anyhow!("Failed to connect to database: {}", e))
     }
-    
+
     /// Get a shared database connection (wrapped in Arc for easy sharing)
     pub async fn get_shared_database_connection(&self) -> anyhow::Result<Arc<DatabaseConnection>> {
         let conn = self.create_database_connection().await?;
@@ -109,74 +109,74 @@ impl Config {
 }
 
 /// Service configuration loaded from YAML file
-/// 
+///
 /// This is a singleton that loads configuration from `conf/service_conf.yaml`.
 /// It provides type-safe access to configuration values using dot-separated paths.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```no_run
-/// use ragflow::ServiceConfig;
-/// 
+/// use ragflow::SystemConfig;
+///
 /// // Initialize the singleton (usually done once at application startup)
-/// ServiceConfig::init().expect("Failed to load configuration");
-/// 
+/// SystemConfig::init().expect("Failed to load configuration");
+///
 /// // Get the singleton instance
-/// let config = ServiceConfig::instance().expect("Configuration not initialized");
-/// 
+/// let config = SystemConfig::instance().expect("Configuration not initialized");
+///
 /// // Get specific configuration values
 /// let host = config.get::<String>("ragflow.host").expect("ragflow.host not found");
 /// let port = config.get::<u16>("ragflow.http_port").expect("ragflow.http_port not found");
-/// 
+///
 /// // Get with default value if not found
 /// let timeout = config.get_or("task_executor.timeout", 30);
-/// 
+///
 /// // Check if a configuration exists
 /// if config.has("mysql.host") {
 ///     println!("MySQL host is configured");
 /// }
-/// 
+///
 /// // Print all configuration values
 /// config.print_all();
 /// ```
 #[derive(Debug, Clone)]
-pub struct ServiceConfig {
+pub struct SystemConfig {
     value: serde_yaml::Value,
 }
 
-impl ServiceConfig {
+impl SystemConfig {
     /// Initialize the singleton from the YAML file at `conf/service_conf.yaml`
     pub fn init() -> anyhow::Result<()> {
         let path = Path::new("conf/service_conf.yaml");
         let config = Self::from_yaml_file(path)?;
-        SERVICE_CONFIG
+        SYSTEM_CONFIG
             .set(config)
-            .map_err(|_| anyhow::anyhow!("ServiceConfig already initialized"))
+            .map_err(|_| anyhow::anyhow!("SystemConfig already initialized"))
     }
 
     /// Initialize with a custom file path
     pub fn init_with_path<P: AsRef<Path>>(path: P) -> anyhow::Result<()> {
         let config = Self::from_yaml_file(path.as_ref())?;
-        SERVICE_CONFIG
+        SYSTEM_CONFIG
             .set(config)
-            .map_err(|_| anyhow::anyhow!("ServiceConfig already initialized"))
+            .map_err(|_| anyhow::anyhow!("SystemConfig already initialized"))
     }
 
     /// Get the singleton instance (must be initialized first)
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// Returns an error if the singleton hasn't been initialized yet.
     /// Call `init()` or `init_with_path()` before calling this method.
     pub fn instance() -> anyhow::Result<&'static Self> {
-        SERVICE_CONFIG
+        SYSTEM_CONFIG
             .get()
-            .ok_or_else(|| anyhow::anyhow!("ServiceConfig not initialized, call init() first"))
+            .ok_or_else(|| anyhow::anyhow!("SystemConfig not initialized, call init() first"))
     }
-    
+
     /// Check if the singleton has been initialized
     pub fn is_initialized() -> bool {
-        SERVICE_CONFIG.get().is_some()
+        SYSTEM_CONFIG.get().is_some()
     }
 
     /// Load configuration from a YAML file
@@ -281,7 +281,7 @@ impl ServiceConfig {
             }
         }
     }
-    
+
     /// Print a primitive YAML value (non-mapping, non-sequence)
     fn print_primitive_value(&self, value: &serde_yaml::Value) {
         match value {
@@ -307,55 +307,55 @@ impl ServiceConfig {
     }
 }
 
-/// Global singleton instance of ServiceConfig
-static SERVICE_CONFIG: OnceLock<ServiceConfig> = OnceLock::new();
+/// Global singleton instance of SystemConfig
+static SYSTEM_CONFIG: OnceLock<SystemConfig> = OnceLock::new();
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_service_config_load_from_yaml() {
-        let config = ServiceConfig::from_yaml_file("conf/service_conf.yaml");
+        let config = SystemConfig::from_yaml_file("conf/service_conf.yaml");
         assert!(config.is_ok(), "Failed to load YAML config: {:?}", config);
     }
-    
+
     #[test]
     fn test_service_config_get_values() {
-        let config = ServiceConfig::from_yaml_file("conf/service_conf.yaml").unwrap();
-        
+        let config = SystemConfig::from_yaml_file("conf/service_conf.yaml").unwrap();
+
         // 测试获取字符串值
         let host = config.get::<String>("ragflow.host");
         assert_eq!(host, Some("0.0.0.0".to_string()));
-        
+
         // 测试获取数值
         let port = config.get::<u16>("ragflow.http_port");
         assert_eq!(port, Some(9380));
-        
+
         // 测试获取嵌套值
         let mysql_host = config.get::<String>("mysql.host");
         assert_eq!(mysql_host, Some("localhost".to_string()));
-        
+
         // 测试默认值
         let nonexistent = config.get::<String>("nonexistent.key");
         assert_eq!(nonexistent, None);
-        
+
         let with_default = config.get_or("nonexistent.key", "default".to_string());
         assert_eq!(with_default, "default");
     }
-    
+
     #[test]
     fn test_service_config_has_method() {
-        let config = ServiceConfig::from_yaml_file("conf/service_conf.yaml").unwrap();
-        
+        let config = SystemConfig::from_yaml_file("conf/service_conf.yaml").unwrap();
+
         assert!(config.has("ragflow.host"));
         assert!(config.has("mysql.host"));
         assert!(!config.has("nonexistent.key"));
     }
-    
+
     #[test]
     fn test_service_config_print_all_does_not_panic() {
-        let config = ServiceConfig::from_yaml_file("conf/service_conf.yaml").unwrap();
+        let config = SystemConfig::from_yaml_file("conf/service_conf.yaml").unwrap();
         config.print_all(); // 不应该panic
     }
 }
