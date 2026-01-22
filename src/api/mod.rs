@@ -31,4 +31,5 @@ pub mod knowledge_bases;
 pub mod misc;
 pub mod routes;
 pub mod system;
+pub mod user;
 pub mod version;

@@ -199,6 +199,15 @@ fn create_router(state: AppState) -> Router {
         .route("/api/v1/chat/completions", post(routes::chat_completions))
         .route("/api/v1/documents", post(routes::upload_document))
         .route("/v1/system/ping", get(routes::ping))
+        // User management routes
+        .route("/login", post(routes::login))
+        .route("/login/channels", get(routes::get_login_channels))
+        .route("/login/:channel", get(routes::oauth_login))
+        .route("/oauth/callback/:channel", get(routes::oauth_callback))
+        .route("/logout", get(routes::logout))
+        .route("/setting", post(routes::update_settings))
+        .route("/info", get(routes::get_profile))
+        .route("/register", post(routes::register))
         // Fallback for 404
         .fallback(routes::not_found)
         // Add middleware layers

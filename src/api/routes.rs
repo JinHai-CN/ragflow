@@ -33,3 +33,4 @@ pub use super::chat::chat_completions;
 pub use super::documents::upload_document;
 pub use super::misc::{api_docs, not_found, root};
 pub use super::system::ping;
+pub use super::user::*;
