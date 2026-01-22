@@ -44,6 +44,7 @@ use tower_http::{
 };
 use ragflow::api::routes;
 use ragflow::config::Config;
+use ragflow::server::AppState;
 
 // Command line arguments
 #[derive(Parser, Debug)]
@@ -71,14 +72,7 @@ struct Cli {
     port: u16,
 }
 
-// Application state
-#[derive(Clone)]
-#[allow(dead_code)]
-struct AppState {
-    debug_mode: bool,
-    server_start_time: std::time::Instant,
-    config: Config,
-}
+
 
 // API Response structures (kept for compatibility, though routes now use serde_json directly)
 #[derive(Serialize)]
@@ -157,10 +151,12 @@ async fn init_app(debug: bool) -> anyhow::Result<AppState> {
     let config = Config::from_env()?;
     
     // Initialize application state
+    let db = config.create_database_connection().await?;
     let state = AppState {
         debug_mode: debug,
         server_start_time: std::time::Instant::now(),
         config,
+        db,
     };
     
     // TODO: Initialize database connection

@@ -22,8 +22,10 @@
  * EXPRESS OR IMPLIED.
  */
 
+use sea_orm::{Database, DatabaseConnection};
 use serde::{Deserialize, Serialize};
 use std::env;
+use std::sync::Arc;
 
 /// Application configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -88,5 +90,18 @@ impl Config {
     /// Get the server address (host:port)
     pub fn server_addr(&self) -> String {
         format!("{}:{}", self.host, self.port)
+    }
+    
+    /// Create a database connection pool
+    pub async fn create_database_connection(&self) -> anyhow::Result<DatabaseConnection> {
+        Database::connect(&self.database_url)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to connect to database: {}", e))
+    }
+    
+    /// Get a shared database connection (wrapped in Arc for easy sharing)
+    pub async fn get_shared_database_connection(&self) -> anyhow::Result<Arc<DatabaseConnection>> {
+        let conn = self.create_database_connection().await?;
+        Ok(Arc::new(conn))
     }
 }

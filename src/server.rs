@@ -41,14 +41,16 @@ use tokio::sync::oneshot;
 
 use crate::api::routes;
 use crate::config::Config;
+use sea_orm::DatabaseConnection;
 
 // Application state for Axum
 #[derive(Clone)]
 #[allow(dead_code)]
 pub struct AppState {
-    debug_mode: bool,
-    server_start_time: std::time::Instant,
-    config: Config,
+    pub debug_mode: bool,
+    pub server_start_time: std::time::Instant,
+    pub config: Config,
+    pub db: DatabaseConnection,
 }
 
 /// Main server structure
@@ -67,10 +69,12 @@ impl Server {
         info!("Starting RAGFlow server on {}", self.config.server_addr());
         
         // Initialize application state
+        let db = self.config.create_database_connection().await?;
         let app_state = AppState {
             debug_mode: false, // will be set from config
             server_start_time: std::time::Instant::now(),
             config: self.config.clone(),
+            db,
         };
         
         // Create router

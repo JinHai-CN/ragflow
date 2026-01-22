@@ -22,11 +22,14 @@
  * EXPRESS OR IMPLIED.
  */
 
+use axum::extract::State;
 use axum::response::{IntoResponse, Json};
 use serde_json::json;
 
+use crate::server::AppState;
+
 /// Knowledge base endpoints placeholder
-pub async fn list_knowledge_bases() -> impl IntoResponse {
+pub async fn list_knowledge_bases(_state: State<AppState>) -> impl IntoResponse {
     Json(json!({
         "code": 0,
         "message": "success",
