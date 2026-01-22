@@ -22,12 +22,13 @@
  * EXPRESS OR IMPLIED.
  */
 
-use axum::response::{IntoResponse, Json};
+use actix_web::{HttpResponse, Responder};
 use serde_json::json;
 
 /// Health check endpoint
-pub async fn health_check() -> impl IntoResponse {
-    Json(json!({
+
+pub async fn health_check() -> impl Responder {
+    HttpResponse::Ok().json(json!({
         "code": 0,
         "message": "success",
         "data": "OK"

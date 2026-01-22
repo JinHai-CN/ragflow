@@ -22,12 +22,13 @@
  * EXPRESS OR IMPLIED.
  */
 
-use axum::response::{IntoResponse, Json};
+use actix_web::{post, HttpResponse, Responder};
 use serde_json::json;
 
 /// Chat endpoints placeholder
-pub async fn chat_completions() -> impl IntoResponse {
-    Json(json!({
+#[post("/api/v1/chat/completions")]
+pub async fn chat_completions() -> impl Responder {
+    HttpResponse::Ok().json(json!({
         "code": 0,
         "message": "success",
         "data": {

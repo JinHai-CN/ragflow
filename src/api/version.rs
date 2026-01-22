@@ -22,12 +22,13 @@
  * EXPRESS OR IMPLIED.
  */
 
-use axum::response::{IntoResponse, Json};
+use actix_web::{get, HttpResponse, Responder};
 use serde_json::json;
 
 /// Version information endpoint
-pub async fn get_version() -> impl IntoResponse {
-    Json(json!({
+#[get("/version")]
+pub async fn get_version() -> impl Responder {
+    HttpResponse::Ok().json(json!({
         "code": 0,
         "message": "success",
         "data": {

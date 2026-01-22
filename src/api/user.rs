@@ -2,14 +2,10 @@
 //!
 //! This module provides API endpoints for user management operations.
 
-use axum::{
-    extract::{Json, State},
-    http::StatusCode,
-    response::{IntoResponse, Response},
-};
+use actix_web::{get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::info;
+use log::info;
 
 use crate::server::AppState;
 
@@ -55,7 +51,7 @@ pub struct ApiResponse<T> {
 }
 
 impl<T: Serialize> ApiResponse<T> {
-    fn success(data: T) -> Self {
+    pub fn success(data: T) -> Self {
         Self {
             code: 0,
             message: "success".to_string(),
@@ -63,7 +59,7 @@ impl<T: Serialize> ApiResponse<T> {
         }
     }
 
-    fn error(message: &str, code: u32) -> Self {
+    pub fn error(message: &str, code: u32) -> Self {
         Self {
             code,
             message: message.to_string(),
@@ -74,7 +70,7 @@ impl<T: Serialize> ApiResponse<T> {
 
 // Helper implementation for unit type ()
 impl ApiResponse<()> {
-    fn simple_error(message: &str, code: u32) -> Self {
+    pub fn simple_error(message: &str, code: u32) -> Self {
         Self {
             code,
             message: message.to_string(),
@@ -83,24 +79,29 @@ impl ApiResponse<()> {
     }
 }
 
-impl<T: Serialize> IntoResponse for ApiResponse<T> {
-    fn into_response(self) -> Response {
-        let status_code = if self.code == 0 {
-            StatusCode::OK
-        } else {
-            StatusCode::BAD_REQUEST
-        };
+impl<T: Serialize> Responder for ApiResponse<T> {
+    type Body = actix_web::body::BoxBody;
 
-        (status_code, Json(self)).into_response()
+    fn respond_to(self, _req: &actix_web::HttpRequest) -> actix_web::HttpResponse<Self::Body> {
+        let status = if self.code == 0 {
+            actix_web::http::StatusCode::OK
+        } else {
+            actix_web::http::StatusCode::BAD_REQUEST
+        };
+        
+        HttpResponse::build(status)
+            .content_type("application/json")
+            .json(self)
     }
 }
 
 /// User login endpoint
 /// POST /login
+#[post("/login")]
 pub async fn login(
-    State(_state): State<AppState>,
-    Json(request): Json<LoginRequest>,
-) -> impl IntoResponse {
+    _state: web::Data<AppState>,
+    request: web::Json<LoginRequest>,
+) -> impl Responder {
     info!("Login attempt for email: {}", request.email);
 
     // TODO: Implement actual authentication
@@ -121,10 +122,11 @@ pub async fn login(
 
 /// User registration endpoint
 /// POST /register
+#[post("/register")]
 pub async fn register(
-    State(_state): State<AppState>,
-    Json(request): Json<RegisterRequest>,
-) -> impl IntoResponse {
+    _state: web::Data<AppState>,
+    request: web::Json<RegisterRequest>,
+) -> impl Responder {
     info!("Registration attempt for email: {}", request.email);
 
     // TODO: Implement actual registration
@@ -145,7 +147,8 @@ pub async fn register(
 
 /// User logout endpoint
 /// GET /logout
-pub async fn logout() -> impl IntoResponse {
+#[get("/logout")]
+pub async fn logout() -> impl Responder {
     info!("User logout requested");
 
     // TODO: Implement actual logout (invalidate token, clear session, etc.)
@@ -154,7 +157,8 @@ pub async fn logout() -> impl IntoResponse {
 
 /// Get user profile endpoint
 /// GET /info
-pub async fn get_profile() -> impl IntoResponse {
+#[get("/info")]
+pub async fn get_profile() -> impl Responder {
     info!("User profile requested");
 
     // TODO: Get actual user from authentication middleware
@@ -174,21 +178,22 @@ pub async fn get_profile() -> impl IntoResponse {
 
 /// Update user settings endpoint
 /// POST /setting
+#[post("/setting")]
 pub async fn update_settings(
-    Json(request): Json<UpdateSettingsRequest>,
-) -> impl IntoResponse {
+    request: web::Json<UpdateSettingsRequest>,
+) -> impl Responder {
     info!("User settings update requested");
 
     // TODO: Implement actual settings update
     // For now, return a placeholder response
     ApiResponse::success(json!({
         "id": "current_user_id",
-        "nickname": request.nickname.unwrap_or("Updated User".to_string()),
-        "email": request.email.unwrap_or("updated@example.com".to_string()),
-        "avatar": request.avatar,
-        "language": request.language,
-        "color_schema": request.color_schema,
-        "timezone": request.timezone,
+        "nickname": request.nickname.clone().unwrap_or("Updated User".to_string()),
+        "email": request.email.clone().unwrap_or("updated@example.com".to_string()),
+        "avatar": request.avatar.clone(),
+        "language": request.language.clone(),
+        "color_schema": request.color_schema.clone(),
+        "timezone": request.timezone.clone(),
         "is_superuser": false,
         "create_time": 1234567890,
         "update_time": 1234567891, // Incremented to show update
@@ -196,10 +201,11 @@ pub async fn update_settings(
 }
 
 /// Change password endpoint
-/// POST /setting (with password fields)
+/// POST /setting/password
+#[post("/setting/password")]
 pub async fn change_password(
-    Json(_request): Json<ChangePasswordRequest>,
-) -> impl IntoResponse {
+    _request: web::Json<ChangePasswordRequest>,
+) -> impl Responder {
     info!("Password change requested");
 
     // TODO: Implement actual password change with validation
@@ -209,7 +215,8 @@ pub async fn change_password(
 
 /// Get supported login channels
 /// GET /login/channels
-pub async fn get_login_channels() -> impl IntoResponse {
+#[get("/login/channels")]
+pub async fn get_login_channels() -> impl Responder {
     info!("Login channels requested");
 
     // TODO: Read from configuration
@@ -229,9 +236,10 @@ pub async fn get_login_channels() -> impl IntoResponse {
 
 /// OAuth login redirect
 /// GET /login/<channel>
+#[get("/login/{channel}")]
 pub async fn oauth_login(
-    axum::extract::Path(channel): axum::extract::Path<String>,
-) -> impl IntoResponse {
+    channel: web::Path<String>,
+) -> impl Responder {
     info!("OAuth login requested for channel: {}", channel);
 
     // TODO: Implement actual OAuth flow
@@ -241,9 +249,10 @@ pub async fn oauth_login(
 
 /// OAuth callback handler
 /// GET /oauth/callback/<channel>
+#[get("/oauth/callback/{channel}")]
 pub async fn oauth_callback(
-    axum::extract::Path(channel): axum::extract::Path<String>,
-) -> impl IntoResponse {
+    channel: web::Path<String>,
+) -> impl Responder {
     info!("OAuth callback for channel: {}", channel);
 
     // TODO: Implement actual OAuth callback

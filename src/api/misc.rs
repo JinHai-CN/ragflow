@@ -22,20 +22,19 @@
  * EXPRESS OR IMPLIED.
  */
 
-use axum::{
-    http::StatusCode,
-    response::{IntoResponse, Json},
-};
+use actix_web::{get, HttpResponse, Responder};
 use serde_json::json;
 
 /// Root endpoint
-pub async fn root() -> impl IntoResponse {
+#[get("/")]
+pub async fn root() -> impl Responder {
     "RAGFlow API Server"
 }
 
 /// API documentation endpoint (placeholder for Swagger)
-pub async fn api_docs() -> impl IntoResponse {
-    Json(json!({
+#[get("/apidocs")]
+pub async fn api_docs() -> impl Responder {
+    HttpResponse::Ok().json(json!({
         "code": 0,
         "message": "success",
         "data": {
@@ -50,10 +49,10 @@ pub async fn api_docs() -> impl IntoResponse {
 }
 
 /// Handle 404 - Not Found
-pub async fn not_found() -> impl IntoResponse {
-    (StatusCode::NOT_FOUND, Json(json!({
+pub async fn not_found() -> impl Responder {
+    HttpResponse::NotFound().json(json!({
         "code": 404,
         "message": "Not Found",
         "data": null
-    })))
+    }))
 }

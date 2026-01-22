@@ -16,34 +16,31 @@
  * VIOLATION:
  * Any unauthorized use, reproduction, or distribution of this software
  * may result in severe civil and criminal penalties, and will be prosecuted
- * to the maximum extent possible under applicable law.
+ * the maximum extent possible under applicable law.
  *
  * THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED.
  */
 
-use axum::{
-    http::Method,
-    routing::{get, post},
-    Router,
-};
+use actix_cors::Cors;
+use actix_web::{http, web, App, HttpServer};
+use actix_web::middleware::Compress;
 use clap::Parser;
 use log::{info, warn};
-use ragflow::api::routes;
 use ragflow::config::Config;
 use ragflow::server::AppState;
-use serde::Serialize;
-use std::env;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use std::time::Duration;
-use tokio::signal;
-use tokio::sync::oneshot;
-use tower_http::{
-    catch_panic::CatchPanicLayer,
-    compression::CompressionLayer,
-    cors::{Any, CorsLayer},
-    trace::TraceLayer,
+
+// Import API handlers from modules
+use ragflow::api::health::health_check;
+use ragflow::api::system::ping;
+use ragflow::api::misc::{root, api_docs};
+use ragflow::api::version::get_version;
+use ragflow::api::knowledge_bases::list_knowledge_bases;
+use ragflow::api::chat::chat_completions;
+use ragflow::api::documents::upload_document;
+use ragflow::api::user::{
+    login, register, logout, get_profile, update_settings,
+    get_login_channels, oauth_login, oauth_callback
 };
 
 // Command line arguments
@@ -72,32 +69,6 @@ struct Cli {
     port: u16,
 }
 
-// API Response structures (kept for compatibility, though routes now use serde_json directly)
-#[derive(Serialize)]
-struct ApiResponse<T> {
-    code: u32,
-    message: String,
-    data: Option<T>,
-}
-
-impl<T: Serialize> ApiResponse<T> {
-    fn success(data: T) -> Self {
-        Self {
-            code: 0,
-            message: "success".to_string(),
-            data: Some(data),
-        }
-    }
-
-    fn error(message: &str, code: u32) -> Self {
-        Self {
-            code,
-            message: message.to_string(),
-            data: None,
-        }
-    }
-}
-
 // Display RAGFlow logo and version
 fn display_banner() {
     info!(
@@ -110,20 +81,20 @@ fn display_banner() {
     "
     );
     info!("RAGFlow version: {}", env!("CARGO_PKG_VERSION"));
-    info!("Starting RAGFlow API Server (Rust implementation with Axum)");
+    info!("Starting RAGFlow API Server (Rust implementation with Actix-web)");
 }
 
 // Background task for update progress (simplified version)
-async fn update_progress_task(stop_signal: Arc<AtomicBool>) {
+async fn update_progress_task(stop_signal: std::sync::Arc<std::sync::atomic::AtomicBool>) {
     info!("Starting update_progress background task");
 
-    while !stop_signal.load(Ordering::Relaxed) {
+    while !stop_signal.load(std::sync::atomic::Ordering::Relaxed) {
         // TODO: Implement actual progress update logic
         // This is a placeholder that simulates the Python update_progress function
         info!("Update progress task running...");
 
         // Wait for 6 seconds as in Python code
-        tokio::time::sleep(Duration::from_secs(6)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(6)).await;
     }
 
     info!("Update progress task stopped");
@@ -133,9 +104,9 @@ async fn update_progress_task(stop_signal: Arc<AtomicBool>) {
 fn init_app(debug: bool) -> anyhow::Result<AppState> {
     // Initialize logging
     if debug {
-        env::set_var("RUST_LOG", "debug");
+        std::env::set_var("RUST_LOG", "debug");
     } else {
-        env::set_var("RUST_LOG", "info");
+        std::env::set_var("RUST_LOG", "info");
     }
     env_logger::init();
 
@@ -180,46 +151,7 @@ fn init_app(debug: bool) -> anyhow::Result<AppState> {
     Ok(state)
 }
 
-// Create the Axum router
-fn create_router(state: AppState) -> Router {
-    // CORS configuration
-    let cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
-        .allow_headers(Any)
-        .allow_origin(Any);
-
-    // Build the router
-    Router::new()
-        .route("/", get(routes::root))
-        .route("/health", get(routes::health_check))
-        .route("/api/v1/health", get(routes::health_check))
-        .route("/version", get(routes::get_version))
-        .route("/apidocs", get(routes::api_docs))
-        .route("/api/v1/knowledge-bases", get(routes::list_knowledge_bases))
-        .route("/api/v1/chat/completions", post(routes::chat_completions))
-        .route("/api/v1/documents", post(routes::upload_document))
-        .route("/v1/system/ping", get(routes::ping))
-        // User management routes
-        .route("/login", post(routes::login))
-        .route("/login/channels", get(routes::get_login_channels))
-        .route("/login/:channel", get(routes::oauth_login))
-        .route("/oauth/callback/:channel", get(routes::oauth_callback))
-        .route("/logout", get(routes::logout))
-        .route("/setting", post(routes::update_settings))
-        .route("/info", get(routes::get_profile))
-        .route("/register", post(routes::register))
-        // Fallback for 404
-        .fallback(routes::not_found)
-        // Add middleware layers
-        .layer(TraceLayer::new_for_http())
-        .layer(CompressionLayer::new())
-        .layer(CatchPanicLayer::new())
-        .layer(cors)
-        // Add application state
-        .with_state(state)
-}
-
-#[tokio::main]
+#[actix_web::main]
 async fn main() -> anyhow::Result<()> {
     // Parse command line arguments
     let args = Cli::parse();
@@ -254,7 +186,7 @@ async fn main() -> anyhow::Result<()> {
     }
 
     // Create stop signal for background tasks
-    let stop_signal = Arc::new(AtomicBool::new(false));
+    let stop_signal = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
     let stop_signal_for_task = stop_signal.clone();
 
     // Start background task for update progress
@@ -268,64 +200,63 @@ async fn main() -> anyhow::Result<()> {
         host, port
     );
 
-    // Create router
-    let router = create_router(app_state);
-
-    // Bind and serve
     let addr = format!("{}:{}", host, port);
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
-    info!("Server listening on http://{}", addr);
 
-    // Create shutdown signal channel
-    let (tx, rx) = oneshot::channel();
+    info!("Server starting on http://{}", addr);
 
-    // Spawn task to handle shutdown signals
-    let graceful_shutdown = async move {
-        let ctrl_c = async {
-            signal::ctrl_c()
-                .await
-                .expect("failed to install Ctrl+C handler");
-        };
+    // Create and run Actix-web server
+    let server = HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+            .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
+            .allowed_header(http::header::CONTENT_TYPE)
+            .max_age(3600);
 
-        #[cfg(unix)]
-        let terminate = async {
-            signal::unix::signal(signal::unix::SignalKind::terminate())
-                .expect("failed to install signal handler")
-                .recv()
-                .await;
-        };
+        App::new()
+            .wrap(Compress::default())
+            .wrap(cors)
+            .app_data(web::Data::new(app_state.clone()))
+            .service(root)
+            .route("/health", web::get().to(health_check))
+            .route("/api/v1/health", web::get().to(health_check))
+            .service(get_version)
+            .service(api_docs)
+            .service(ping)
+            .service(login)
+            .service(register)
+            .service(logout)
+            .service(get_profile)
+            .service(update_settings)
+            .service(get_login_channels)
+            .service(oauth_login)
+            .service(oauth_callback)
+            .service(list_knowledge_bases)
+            .service(chat_completions)
+            .service(upload_document)
+            .default_service(web::route().to(ragflow::api::misc::not_found))
+    })
+    .bind(&addr)?
+    .worker_max_blocking_threads(1024)
+    .run();
 
-        #[cfg(not(unix))]
-        let terminate = std::future::pending::<()>();
+    // Handle graceful shutdown
+    let server_handle = server.handle();
+    let stop_signal_clone = stop_signal.clone();
+    let background_task_handle = background_task;
 
-        tokio::select! {
-            _ = ctrl_c => {
-                info!("Received Ctrl+C signal, shutting down...");
-            },
-            _ = terminate => {
-                info!("Received SIGTERM signal, shutting down...");
-            },
+    tokio::select! {
+        _ = server => {
+            info!("Server stopped");
         }
-
-        // Send shutdown signal
-        let _ = tx.send(());
-    };
-
-    // Spawn the graceful shutdown handler
-    tokio::spawn(graceful_shutdown);
-
-    // Serve with graceful shutdown
-    axum::serve(listener, router)
-        .with_graceful_shutdown(async move {
-            rx.await.ok();
-            info!("Initiating graceful shutdown...");
-            // Stop background tasks
-            stop_signal.store(true, Ordering::Relaxed);
-            // Wait for background task to finish
-            let _ = background_task.await;
-            info!("Server shutdown complete");
-        })
-        .await?;
+        _ = tokio::signal::ctrl_c() => {
+            info!("Received Ctrl+C, shutting down gracefully...");
+            stop_signal_clone.store(true, std::sync::atomic::Ordering::Relaxed);
+            server_handle.stop(true).await;
+            let _ = background_task_handle.await;
+            info!("Shutdown complete");
+        }
+    }
 
     Ok(())
 }

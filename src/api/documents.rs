@@ -22,12 +22,13 @@
  * EXPRESS OR IMPLIED.
  */
 
-use axum::response::{IntoResponse, Json};
+use actix_web::{post, HttpResponse, Responder};
 use serde_json::json;
 
 /// Document upload endpoint placeholder
-pub async fn upload_document() -> impl IntoResponse {
-    Json(json!({
+#[post("/api/v1/documents")]
+pub async fn upload_document() -> impl Responder {
+    HttpResponse::Ok().json(json!({
         "code": 0,
         "message": "success",
         "data": {
