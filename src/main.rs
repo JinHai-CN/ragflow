@@ -100,8 +100,8 @@ async fn update_progress_task(stop_signal: std::sync::Arc<std::sync::atomic::Ato
     info!("Update progress task stopped");
 }
 
-// Initialize application
-async fn init_app(debug: bool) -> anyhow::Result<AppState> {
+// Initialize application with given configuration
+async fn init_app_with_config(debug: bool, config: Config) -> anyhow::Result<AppState> {
     // Initialize logging
     if debug {
         std::env::set_var("RUST_LOG", "debug");
@@ -110,16 +110,7 @@ async fn init_app(debug: bool) -> anyhow::Result<AppState> {
     }
     env_logger::init();
 
-    // Initialize SystemConfig singleton if not already initialized
-    if !ragflow::SystemConfig::is_initialized() {
-        ragflow::SystemConfig::init()?;
-    }
-    let system_config = ragflow::SystemConfig::instance()?;
-    system_config.print_all();
-
-    // Load configuration from environment
-    let env_config = Config::from_env()?;
-    env_config.print_all();
+    config.print_all();
 
     // Display banner
     display_banner();
@@ -127,17 +118,17 @@ async fn init_app(debug: bool) -> anyhow::Result<AppState> {
     // Show configuration
     info!("Debug mode: {}", debug);
     // Get host and port from configuration for display
-    let host = system_config
+    let host = config.services
         .get::<String>("ragflow.host")
         .unwrap_or("0.0.0.0".to_string());
-    let port = system_config
+    let port = config.services
         .get::<u16>("ragflow.http_port")
         .unwrap_or(9380);
     info!("Host IP: {} (from config file)", host);
     info!("Port: {} (from config file)", port);
 
     // Create database connection
-    let db = env_config.create_database_connection().await?;
+    let db = config.create_database_connection().await?;
     info!("Database connection established");
 
     // Create user service
@@ -147,7 +138,7 @@ async fn init_app(debug: bool) -> anyhow::Result<AppState> {
     let state = AppState {
         debug_mode: debug,
         server_start_time: std::time::Instant::now(),
-        config: env_config,
+        config,
         db,
         user_service,
     };
@@ -156,6 +147,12 @@ async fn init_app(debug: bool) -> anyhow::Result<AppState> {
     // TODO: Load plugins
 
     Ok(state)
+}
+
+// Initialize application (for backward compatibility)
+async fn init_app(debug: bool) -> anyhow::Result<AppState> {
+    let config = Config::from_env()?;
+    init_app_with_config(debug, config).await
 }
 
 #[actix_web::main]
@@ -169,22 +166,19 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    // Initialize SystemConfig singleton if not already initialized
-    if !ragflow::SystemConfig::is_initialized() {
-        ragflow::SystemConfig::init()?;
-    }
-    let system_config = ragflow::SystemConfig::instance()?;
-
+    // Load configuration from environment
+    let config = Config::from_env()?;
+    
     // Determine host and port from configuration file, fallback to command line arguments
-    let host = system_config
+    let host = config.services
         .get::<String>("ragflow.host")
         .unwrap_or(args.host);
-    let port = system_config
+    let port = config.services
         .get::<u16>("ragflow.http_port")
         .unwrap_or(args.port);
 
-    // Initialize application
-    let app_state = init_app(args.debug).await?;
+    // Initialize application with the loaded configuration
+    let app_state = init_app_with_config(args.debug, config).await?;
 
     // Handle --init-superuser flag
     if args.init_superuser {

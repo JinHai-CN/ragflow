@@ -67,6 +67,10 @@ pub struct Config {
 
     /// Storage implementation (MINIO, AZURE_SPN, AZURE_SAS, AWS_S3, OSS, GCS, OPENDAL)
     pub storage_impl: String,
+
+    /// Service configurations loaded from YAML file
+    #[serde(skip)]
+    pub services: SystemConfig,
 }
 
 impl Config {
@@ -100,6 +104,19 @@ impl Config {
         let device = env::var("DEVICE").unwrap_or_else(|_| "cpu".to_string());
         let storage_impl = env::var("STORAGE_IMPL").unwrap_or_else(|_| "MINIO".to_string());
 
+        // Load service configurations from default YAML file
+        let services = match SystemConfig::from_yaml_file("conf/service_conf.yaml") {
+            Ok(config) => config,
+            Err(e) => {
+                // If file doesn't exist, create an empty configuration
+                log::warn!("Failed to load service configuration file: {}. Using empty configuration.", e);
+                SystemConfig { value: serde_yaml::Value::Mapping(Default::default()) }
+            }
+        };
+
+        // Set the SystemConfig singleton if not already set
+        let _ = SYSTEM_CONFIG.set(services.clone());
+
         Ok(Self {
             host,
             port,
@@ -113,6 +130,60 @@ impl Config {
             db_type,
             device,
             storage_impl,
+            services,
+        })
+    }
+
+    /// Create a new configuration from environment variables and a custom YAML file
+    pub fn from_config_file<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
+        let host = env::var("HOST_IP").unwrap_or_else(|_| "0.0.0.0".to_string());
+        let port = env::var("HOST_PORT")
+            .unwrap_or_else(|_| "9380".to_string())
+            .parse::<u16>()
+            .unwrap_or(9380);
+        let debug = env::var("DEBUG").unwrap_or_else(|_| "false".to_string()) == "true";
+
+        let database_url = env::var("DATABASE_URL")
+            .unwrap_or_else(|_| "mysql://ragflow:ragflow@localhost:3306/ragflow".to_string());
+
+        let redis_url =
+            env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6379".to_string());
+
+        let secret_key =
+            env::var("SECRET_KEY").unwrap_or_else(|_| "your-secret-key-change-this".to_string());
+
+        let max_content_length = env::var("MAX_CONTENT_LENGTH")
+            .unwrap_or_else(|_| "1073741824".to_string()) // 1GB default
+            .parse::<usize>()
+            .unwrap_or(1073741824);
+
+        let doc_engine = env::var("DOC_ENGINE").unwrap_or_else(|_| "elasticsearch".to_string());
+        let default_superuser_email = env::var("DEFAULT_SUPERUSER_EMAIL")
+            .unwrap_or_else(|_| "admin@ragflow.io".to_string());
+        let db_type = env::var("DB_TYPE").unwrap_or_else(|_| "mysql".to_string());
+        let device = env::var("DEVICE").unwrap_or_else(|_| "cpu".to_string());
+        let storage_impl = env::var("STORAGE_IMPL").unwrap_or_else(|_| "MINIO".to_string());
+
+        // Load service configurations from custom YAML file
+        let services = SystemConfig::from_yaml_file(path)?;
+
+        // Set the SystemConfig singleton if not already set
+        let _ = SYSTEM_CONFIG.set(services.clone());
+
+        Ok(Self {
+            host,
+            port,
+            debug,
+            database_url,
+            redis_url,
+            secret_key,
+            max_content_length,
+            doc_engine,
+            default_superuser_email,
+            db_type,
+            device,
+            storage_impl,
+            services,
         })
     }
 
@@ -121,9 +192,48 @@ impl Config {
         format!("{}:{}", self.host, self.port)
     }
 
+    /// Build database URL from configuration
+    fn build_database_url(&self) -> String {
+        match self.db_type.to_lowercase().as_str() {
+            "mysql" => {
+                let host = self.services.get::<String>("mysql.host")
+                    .unwrap_or_else(|| "localhost".to_string());
+                let port = self.services.get::<u16>("mysql.port")
+                    .unwrap_or(5455);
+                let user = self.services.get::<String>("mysql.user")
+                    .unwrap_or_else(|| "root".to_string());
+                let password = self.services.get::<String>("mysql.password")
+                    .unwrap_or_else(|| "infini_rag_flow".to_string());
+                let name = self.services.get::<String>("mysql.name")
+                    .unwrap_or_else(|| "rag_flow".to_string());
+                
+                format!("mysql://{}:{}@{}:{}/{}", user, password, host, port, name)
+            }
+            "postgresql" | "postgres" => {
+                let host = self.services.get::<String>("postgres.host")
+                    .unwrap_or_else(|| "localhost".to_string());
+                let port = self.services.get::<u16>("postgres.port")
+                    .unwrap_or(5432);
+                let user = self.services.get::<String>("postgres.user")
+                    .unwrap_or_else(|| "ragflow".to_string());
+                let password = self.services.get::<String>("postgres.password")
+                    .unwrap_or_else(|| "infini_rag_flow".to_string());
+                let name = self.services.get::<String>("postgres.name")
+                    .unwrap_or_else(|| "rag_flow".to_string());
+                
+                format!("postgres://{}:{}@{}:{}/{}", user, password, host, port, name)
+            }
+            _ => {
+                log::warn!("Unsupported database type: {}. Using environment DATABASE_URL.", self.db_type);
+                self.database_url.clone()
+            }
+        }
+    }
+
     /// Create a database connection pool
     pub async fn create_database_connection(&self) -> anyhow::Result<DatabaseConnection> {
-        Database::connect(&self.database_url)
+        let database_url = self.build_database_url();
+        Database::connect(&database_url)
             .await
             .map_err(|e| anyhow::anyhow!("Failed to connect to database: {}", e))
     }
@@ -149,6 +259,9 @@ impl Config {
         println!("Database Type: {}", self.db_type);
         println!("Device: {}", self.device);
         println!("Storage Implementation: {}", self.storage_impl);
+        
+        println!();
+        self.services.print_all();
     }
 }
 
@@ -188,6 +301,14 @@ pub struct SystemConfig {
     value: serde_yaml::Value,
 }
 
+impl Default for SystemConfig {
+    fn default() -> Self {
+        Self {
+            value: serde_yaml::Value::Mapping(Default::default()),
+        }
+    }
+}
+
 impl SystemConfig {
     /// Initialize the singleton from the YAML file at `conf/service_conf.yaml`
     pub fn init() -> anyhow::Result<()> {
@@ -224,7 +345,7 @@ impl SystemConfig {
     }
 
     /// Load configuration from a YAML file
-    fn from_yaml_file<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
+    pub fn from_yaml_file<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
         let content = std::fs::read_to_string(path)?;
         let value: serde_yaml::Value = serde_yaml::from_str(&content)?;
         Ok(Self { value })
