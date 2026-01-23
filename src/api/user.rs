@@ -5,7 +5,7 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use log::info;
+use log::{info, warn};
 
 use crate::server::AppState;
 
@@ -99,25 +99,28 @@ impl<T: Serialize> Responder for ApiResponse<T> {
 /// POST /login
 #[post("/v1/user/login")]
 pub async fn login(
-    _state: web::Data<AppState>,
+    state: web::Data<AppState>,
     request: web::Json<LoginRequest>,
 ) -> impl Responder {
-    info!("Login attempt for email: {}, password: {}", request.email, request.password);
+    info!("Login attempt for email: {}", request.email);
 
-    // TODO: Implement actual authentication
-    // For now, return a placeholder response
-    ApiResponse::success(json!({
-        "id": "user_id_placeholder",
-        "nickname": "Test User",
-        "email": request.email,
-        "avatar": None::<String>,
-        "language": None::<String>,
-        "color_schema": None::<String>,
-        "timezone": None::<String>,
-        "is_superuser": false,
-        "create_time": 1234567890,
-        "update_time": 1234567890,
-    }))
+    // Convert API request to core request
+    let core_request = crate::core::user::LoginRequest {
+        email: request.email.clone(),
+        password: request.password.clone(),
+    };
+
+    // Call the core login function
+    match crate::core::user::login_user(&state.user_service, core_request).await {
+        Ok(profile) => {
+            info!("Login successful for email: {}", request.email);
+            ApiResponse::success(profile)
+        }
+        Err(e) => {
+            warn!("Login failed for email: {}: {}", request.email, e);
+            ApiResponse::error(&e.to_string(), 401)
+        }
+    }
 }
 
 /// User registration endpoint

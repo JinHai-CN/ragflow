@@ -29,5 +29,6 @@ pub struct AppState {
     pub debug_mode: bool,
     pub server_start_time: std::time::Instant,
     pub config: crate::config::Config,
-    // pub db: sea_orm::DatabaseConnection,
+    pub db: sea_orm::DatabaseConnection,
+    pub user_service: crate::models::services::user::UserService,
 }

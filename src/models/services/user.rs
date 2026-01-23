@@ -62,6 +62,7 @@ pub trait UserServiceTrait {
 }
 
 /// User service implementation
+#[derive(Clone)]
 pub struct UserService {
     db: DatabaseConnection,
 }
@@ -242,6 +243,10 @@ impl UserServiceTrait for UserService {
             active_user.is_superuser = Set(is_superuser);
         }
 
+        if updates.access_token.is_some() {
+            active_user.access_token = Set(updates.access_token);
+        }
+
         // Update timestamps
         let current_timestamp = Self::current_timestamp();
         let current_datetime = Self::timestamp_to_datetime(current_timestamp);
@@ -325,6 +330,7 @@ pub struct UserUpdate {
     pub login_channel: Option<String>,
     pub status: Option<String>,
     pub is_superuser: Option<bool>,
+    pub access_token: Option<String>,
 }
 
 /// User service errors

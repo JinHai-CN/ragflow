@@ -101,7 +101,7 @@ async fn update_progress_task(stop_signal: std::sync::Arc<std::sync::atomic::Ato
 }
 
 // Initialize application
-fn init_app(debug: bool) -> anyhow::Result<AppState> {
+async fn init_app(debug: bool) -> anyhow::Result<AppState> {
     // Initialize logging
     if debug {
         std::env::set_var("RUST_LOG", "debug");
@@ -135,16 +135,22 @@ fn init_app(debug: bool) -> anyhow::Result<AppState> {
     // Load configuration from environment
     let env_config = Config::from_env()?;
 
+    // Create database connection
+    let db = env_config.create_database_connection().await?;
+    info!("Database connection established");
+
+    // Create user service
+    let user_service = ragflow::models::services::user::UserService::new(db.clone());
+
     // Initialize application state
-    // let db = env_config.create_database_connection().await?;
     let state = AppState {
         debug_mode: debug,
         server_start_time: std::time::Instant::now(),
         config: env_config,
-        // db,
+        db,
+        user_service,
     };
 
-    // TODO: Initialize database connection
     // TODO: Initialize Redis connection
     // TODO: Load plugins
 
@@ -177,7 +183,7 @@ async fn main() -> anyhow::Result<()> {
         .unwrap_or(args.port);
 
     // Initialize application
-    let app_state = init_app(args.debug)?;
+    let app_state = init_app(args.debug).await?;
 
     // Handle --init-superuser flag
     if args.init_superuser {

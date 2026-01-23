@@ -25,6 +25,8 @@ sqlx = { version = "0.7", features = ["mysql", "postgres", "runtime-tokio"] }
 bcrypt = "0.15"
 validator = { version = "0.18", features = ["derive"] }
 sha2 = "0.10"
+rsa = "0.9"
+base64 = "0.21"
 
 [dev-dependencies]
 sea-orm = { version = "0.12", features = ["sqlx-sqlite", "runtime-tokio", "macros", "debug-print"] }
