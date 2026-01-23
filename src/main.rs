@@ -117,6 +117,10 @@ async fn init_app(debug: bool) -> anyhow::Result<AppState> {
     let system_config = ragflow::SystemConfig::instance()?;
     system_config.print_all();
 
+    // Load configuration from environment
+    let env_config = Config::from_env()?;
+    env_config.print_all();
+
     // Display banner
     display_banner();
 
@@ -131,9 +135,6 @@ async fn init_app(debug: bool) -> anyhow::Result<AppState> {
         .unwrap_or(9380);
     info!("Host IP: {} (from config file)", host);
     info!("Port: {} (from config file)", port);
-
-    // Load configuration from environment
-    let env_config = Config::from_env()?;
 
     // Create database connection
     let db = env_config.create_database_connection().await?;

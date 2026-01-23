@@ -52,6 +52,21 @@ pub struct Config {
 
     /// Maximum content length for uploads
     pub max_content_length: usize,
+
+    /// Document search engine (elasticsearch, infinity, opensearch, oceanbase, seekdb)
+    pub doc_engine: String,
+
+    /// Default superuser email for admin operations
+    pub default_superuser_email: String,
+
+    /// Database type (mysql, postgresql, etc.)
+    pub db_type: String,
+
+    /// Compute device (cpu, gpu, etc.)
+    pub device: String,
+
+    /// Storage implementation (MINIO, AZURE_SPN, AZURE_SAS, AWS_S3, OSS, GCS, OPENDAL)
+    pub storage_impl: String,
 }
 
 impl Config {
@@ -78,6 +93,13 @@ impl Config {
             .parse::<usize>()
             .unwrap_or(1073741824);
 
+        let doc_engine = env::var("DOC_ENGINE").unwrap_or_else(|_| "elasticsearch".to_string());
+        let default_superuser_email = env::var("DEFAULT_SUPERUSER_EMAIL")
+            .unwrap_or_else(|_| "admin@ragflow.io".to_string());
+        let db_type = env::var("DB_TYPE").unwrap_or_else(|_| "mysql".to_string());
+        let device = env::var("DEVICE").unwrap_or_else(|_| "cpu".to_string());
+        let storage_impl = env::var("STORAGE_IMPL").unwrap_or_else(|_| "MINIO".to_string());
+
         Ok(Self {
             host,
             port,
@@ -86,6 +108,11 @@ impl Config {
             redis_url,
             secret_key,
             max_content_length,
+            doc_engine,
+            default_superuser_email,
+            db_type,
+            device,
+            storage_impl,
         })
     }
 
@@ -105,6 +132,23 @@ impl Config {
     pub async fn get_shared_database_connection(&self) -> anyhow::Result<Arc<DatabaseConnection>> {
         let conn = self.create_database_connection().await?;
         Ok(Arc::new(conn))
+    }
+
+    /// Print all configuration values
+    pub fn print_all(&self) {
+        println!("=== Environment Configuration ===");
+        println!("Host: {}", self.host);
+        println!("Port: {}", self.port);
+        println!("Debug: {}", self.debug);
+        println!("Database URL: {}", self.database_url);
+        println!("Redis URL: {}", self.redis_url);
+        println!("Secret Key: {}", self.secret_key);
+        println!("Max Content Length: {}", self.max_content_length);
+        println!("Document Engine: {}", self.doc_engine);
+        println!("Default Superuser Email: {}", self.default_superuser_email);
+        println!("Database Type: {}", self.db_type);
+        println!("Device: {}", self.device);
+        println!("Storage Implementation: {}", self.storage_impl);
     }
 }
 
@@ -353,8 +397,29 @@ mod tests {
     }
 
     #[test]
+    fn test_config_from_env_without_env_vars() {
+        // This test verifies that Config::from_env doesn't panic even when
+        // environment variables are not set (it should use defaults).
+        let config = Config::from_env();
+        assert!(config.is_ok(), "Config::from_env should succeed: {:?}", config);
+        let config = config.unwrap();
+        // Check that default values are set
+        assert_eq!(config.doc_engine, "elasticsearch");
+        assert_eq!(config.default_superuser_email, "admin@ragflow.io");
+        assert_eq!(config.db_type, "mysql");
+        assert_eq!(config.device, "cpu");
+        assert_eq!(config.storage_impl, "MINIO");
+    }
+
+    #[test]
+    fn test_config_print_all_does_not_panic() {
+        let config = Config::from_env().unwrap();
+        config.print_all(); // no panic
+    }
+
+    #[test]
     fn test_service_config_print_all_does_not_panic() {
         let config = SystemConfig::from_yaml_file("conf/service_conf.yaml").unwrap();
-        config.print_all(); // 不应该panic
+        config.print_all(); // no panic
     }
 }
