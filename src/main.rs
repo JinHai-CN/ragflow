@@ -190,9 +190,9 @@ async fn main() -> anyhow::Result<()> {
     let stop_signal_for_task = stop_signal.clone();
 
     // Start background task for update progress
-    let background_task = tokio::spawn(async move {
-        update_progress_task(stop_signal_for_task).await;
-    });
+    // let background_task = tokio::spawn(async move {
+    //     update_progress_task(stop_signal_for_task).await;
+    // });
 
     // Configure HTTP server using configuration values
     info!(
@@ -243,7 +243,7 @@ async fn main() -> anyhow::Result<()> {
     // Handle graceful shutdown
     let server_handle = server.handle();
     let stop_signal_clone = stop_signal.clone();
-    let background_task_handle = background_task;
+    // let background_task_handle = background_task;
 
     tokio::select! {
         _ = server => {
@@ -253,7 +253,7 @@ async fn main() -> anyhow::Result<()> {
             info!("Received Ctrl+C, shutting down gracefully...");
             stop_signal_clone.store(true, std::sync::atomic::Ordering::Relaxed);
             server_handle.stop(true).await;
-            let _ = background_task_handle.await;
+            // let _ = background_task_handle.await;
             info!("Shutdown complete");
         }
     }

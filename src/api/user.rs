@@ -97,12 +97,12 @@ impl<T: Serialize> Responder for ApiResponse<T> {
 
 /// User login endpoint
 /// POST /login
-#[post("/v1/login")]
+#[post("/v1/user/login")]
 pub async fn login(
     _state: web::Data<AppState>,
     request: web::Json<LoginRequest>,
 ) -> impl Responder {
-    info!("Login attempt for email: {}", request.email);
+    info!("Login attempt for email: {}, password: {}", request.email, request.password);
 
     // TODO: Implement actual authentication
     // For now, return a placeholder response
