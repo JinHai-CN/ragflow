@@ -97,7 +97,7 @@ impl<T: Serialize> Responder for ApiResponse<T> {
 
 /// User login endpoint
 /// POST /login
-#[post("/login")]
+#[post("/v1/login")]
 pub async fn login(
     _state: web::Data<AppState>,
     request: web::Json<LoginRequest>,

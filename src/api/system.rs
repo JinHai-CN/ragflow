@@ -26,32 +26,32 @@ use actix_web::{get, web, Error, HttpResponse, Responder};
 use serde_json::json;
 
 /// System ping endpoint
-#[get("/v1/system/ping")]
-pub async fn ping() -> impl Responder {
-    HttpResponse::Ok().json(json!({
-        "code": 0,
-        "message": "success",
-        "data": "pong"
-    }))
-}
-
-// fn read_large_file(path: &str) -> std::io::Result<String> {
-//     println!("read large: {}", path);
-//     std::thread::sleep(Duration::from_secs(1));
-//     Ok("File context".to_string())
-// }
-// /// System ping endpoint
 // #[get("/v1/system/ping")]
-// pub async fn ping() -> Result<HttpResponse, Error> {
-//
-//     let result2 = web::block(move || {
-//         read_large_file("/path/to/large/file.txt")
-//     }).await??;
-//
-//     // println!("result2: {}", result2);
-//     Ok(HttpResponse::Ok().json(json!({
+// pub async fn ping() -> impl Responder {
+//     HttpResponse::Ok().json(json!({
 //         "code": 0,
-//         "message": format!("{}",result2),
+//         "message": "success",
 //         "data": "pong"
-//     })))
+//     }))
 // }
+
+fn read_large_file(path: &str) -> std::io::Result<String> {
+    // println!("read large: {}", path);
+    std::thread::sleep(Duration::from_secs(20));
+    Ok("File context".to_string())
+}
+/// System ping endpoint
+#[get("/v1/system/ping")]
+pub async fn ping() -> Result<HttpResponse, Error> {
+
+    let result2 = web::block(move || {
+        read_large_file("/path/to/large/file.txt")
+    }).await??;
+
+    // println!("result2: {}", result2);
+    Ok(HttpResponse::Ok().json(json!({
+        "code": 0,
+        "message": format!("{}",result2),
+        "data": "pong"
+    })))
+}
