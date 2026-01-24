@@ -38,7 +38,8 @@ def decrypt(line):
     file_path = os.path.join(get_project_base_directory(), "conf", "private.pem")
     rsa_key = RSA.importKey(open(file_path).read(), "Welcome")
     cipher = Cipher_pkcs1_v1_5.new(rsa_key)
-    return cipher.decrypt(base64.b64decode(line), "Fail to decrypt password!").decode('utf-8')
+    b64 = base64.b64decode(line)
+    return cipher.decrypt(b64, "Fail to decrypt password!").decode('utf-8')
 
 
 def decrypt2(crypt_text):

@@ -3,7 +3,7 @@
 //! This module provides service methods for user management using SeaORM.
 
 use async_trait::async_trait;
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{hash, DEFAULT_COST};
 use chrono::{DateTime, Utc};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait,
@@ -85,7 +85,8 @@ impl UserService {
 
     /// Verify a password against a hash
     fn verify_password(password: &str, hash: &str) -> Result<bool, UserServiceError> {
-        verify(password, hash).map_err(|e| UserServiceError::PasswordVerifyError(e.to_string()))
+        Ok(crate::utils::check_password_hash(hash, password))
+        // verify(password, hash).map_err(|e| UserServiceError::PasswordVerifyError(e.to_string()))
     }
 
     /// Get current timestamp in milliseconds
