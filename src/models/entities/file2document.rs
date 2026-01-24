@@ -12,16 +12,16 @@ use validator::Validate;
 #[sea_orm(table_name = "file2document")]
 pub struct Model {
     /// Primary key (32 characters)
-    #[sea_orm(primary_key, column_type = "String(Some(32))")]
+    #[sea_orm(primary_key, column_type = "String(StringLen::N(32))")]
     pub id: String,
 
     /// File ID (nullable)
-    #[sea_orm(column_type = "String(Some(32))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", nullable, indexed)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub file_id: Option<String>,
 
     /// Document ID (nullable)
-    #[sea_orm(column_type = "String(Some(32))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", nullable, indexed)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub document_id: Option<String>,
 

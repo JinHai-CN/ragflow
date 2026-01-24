@@ -12,7 +12,7 @@ use validator::Validate;
 #[sea_orm(table_name = "knowledgebase")]
 pub struct Model {
     /// Primary key (32 characters)
-    #[sea_orm(primary_key, column_type = "String(Some(32))")]
+    #[sea_orm(primary_key, column_type = "String(StringLen::N(32))")]
     pub id: String,
 
     /// Avatar image as base64 string (nullable)
@@ -21,16 +21,16 @@ pub struct Model {
     pub avatar: Option<String>,
 
     /// Tenant ID
-    #[sea_orm(column_type = "String(Some(32))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", indexed)]
     pub tenant_id: String,
 
     /// Knowledge base name
-    #[sea_orm(column_type = "String(Some(128))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(128))", indexed)]
     #[validate(length(min = 1, max = 128))]
     pub name: String,
 
     /// Language preference: "English" or "Chinese"
-    #[sea_orm(column_type = "String(Some(32))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", nullable, indexed)]
     #[serde(default = "default_language")]
     pub language: Option<String>,
 
@@ -40,16 +40,16 @@ pub struct Model {
     pub description: Option<String>,
 
     /// Default embedding model ID
-    #[sea_orm(column_type = "String(Some(128))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(128))", indexed)]
     pub embd_id: String,
 
     /// Permission level: "me" or "team"
-    #[sea_orm(column_type = "String(Some(16))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(16))", indexed)]
     #[serde(default = "default_permission")]
     pub permission: String,
 
     /// Creator user ID
-    #[sea_orm(column_type = "String(Some(32))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", indexed)]
     pub created_by: String,
 
     /// Number of documents in the knowledge base
@@ -78,12 +78,12 @@ pub struct Model {
     pub vector_similarity_weight: f32,
 
     /// Parser ID (default: "naive")
-    #[sea_orm(column_type = "String(Some(32))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", indexed)]
     #[serde(default = "default_parser_id")]
     pub parser_id: String,
 
     /// Pipeline ID (nullable)
-    #[sea_orm(column_type = "String(Some(32))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", nullable, indexed)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pipeline_id: Option<String>,
 
@@ -97,7 +97,7 @@ pub struct Model {
     pub pagerank: i32,
 
     /// GraphRAG task ID (nullable)
-    #[sea_orm(column_type = "String(Some(32))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", nullable, indexed)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub graphrag_task_id: Option<String>,
 
@@ -107,7 +107,7 @@ pub struct Model {
     pub graphrag_task_finish_at: Option<DateTime<Utc>>,
 
     /// RAPTOR task ID (nullable)
-    #[sea_orm(column_type = "String(Some(32))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", nullable, indexed)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub raptor_task_id: Option<String>,
 
@@ -117,7 +117,7 @@ pub struct Model {
     pub raptor_task_finish_at: Option<DateTime<Utc>>,
 
     /// Mindmap task ID (nullable)
-    #[sea_orm(column_type = "String(Some(32))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", nullable, indexed)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mindmap_task_id: Option<String>,
 
@@ -127,7 +127,7 @@ pub struct Model {
     pub mindmap_task_finish_at: Option<DateTime<Utc>>,
 
     /// Account status: "1" for valid, "0" for invalid (deleted/disabled)
-    #[sea_orm(column_type = "String(Some(1))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(1))", nullable, indexed)]
     #[serde(default = "default_status")]
     pub status: Option<String>,
 

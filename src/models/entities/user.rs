@@ -12,26 +12,26 @@ use validator::Validate;
 #[sea_orm(table_name = "user")]
 pub struct Model {
     /// Primary key (32 characters)
-    #[sea_orm(primary_key, column_type = "String(Some(32))")]
+    #[sea_orm(primary_key, column_type = "String(StringLen::N(32))")]
     pub id: String,
 
     /// Access token for API authentication (nullable)
-    #[sea_orm(column_type = "String(Some(255))", nullable)]
+    #[sea_orm(column_type = "String(StringLen::N(255))", nullable)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub access_token: Option<String>,
 
     /// Nickname (display name)
-    #[sea_orm(column_type = "String(Some(100))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(100))", indexed)]
     #[validate(length(min = 1, max = 100))]
     pub nickname: String,
 
     /// Hashed password (nullable for SSO users)
-    #[sea_orm(column_type = "String(Some(255))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(255))", nullable, indexed)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 
     /// Email address (unique)
-    #[sea_orm(column_type = "String(Some(255))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(255))", indexed)]
     #[validate(email)]
     pub email: String,
 
@@ -41,17 +41,17 @@ pub struct Model {
     pub avatar: Option<String>,
 
     /// Language preference: "English" or "Chinese"
-    #[sea_orm(column_type = "String(Some(32))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", nullable, indexed)]
     #[serde(default = "default_language")]
     pub language: Option<String>,
 
     /// Color scheme: "Bright" or "Dark"
-    #[sea_orm(column_type = "String(Some(32))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", nullable, indexed)]
     #[serde(default = "default_color_schema")]
     pub color_schema: Option<String>,
 
     /// Timezone string (e.g., "UTC+8\tAsia/Shanghai")
-    #[sea_orm(column_type = "String(Some(64))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(64))", nullable, indexed)]
     #[serde(default = "default_timezone")]
     pub timezone: Option<String>,
 
@@ -61,27 +61,27 @@ pub struct Model {
     pub last_login_time: Option<DateTime<Utc>>,
 
     /// Authentication status: "1" for authenticated, "0" otherwise
-    #[sea_orm(column_type = "String(Some(1))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(1))", indexed)]
     #[serde(default = "default_is_authenticated")]
     pub is_authenticated: String,
 
     /// Active status: "1" for active, "0" for inactive
-    #[sea_orm(column_type = "String(Some(1))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(1))", indexed)]
     #[serde(default = "default_is_active")]
     pub is_active: String,
 
     /// Anonymous status: "1" for anonymous, "0" for known user
-    #[sea_orm(column_type = "String(Some(1))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(1))", indexed)]
     #[serde(default = "default_is_anonymous")]
     pub is_anonymous: String,
 
     /// Login channel (e.g., "google", "github", "local")
-    #[sea_orm(column_type = "String(Some(255))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(255))", nullable, indexed)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub login_channel: Option<String>,
 
     /// Account status: "1" for valid, "0" for invalid (deleted/disabled)
-    #[sea_orm(column_type = "String(Some(1))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(1))", nullable, indexed)]
     #[serde(default = "default_status")]
     pub status: Option<String>,
 

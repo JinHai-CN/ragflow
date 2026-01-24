@@ -196,8 +196,12 @@ impl Config {
     fn build_database_url(&self) -> String {
         match self.db_type.to_lowercase().as_str() {
             "mysql" => {
-                let host = self.services.get::<String>("mysql.host")
+                let mut host = self.services.get::<String>("mysql.host")
                     .unwrap_or_else(|| "localhost".to_string());
+                // Replace "localhost" with "127.0.0.1" for MySQL connections
+                if host.eq_ignore_ascii_case("localhost") {
+                    host = "127.0.0.1".to_string();
+                }
                 let port = self.services.get::<u16>("mysql.port")
                     .unwrap_or(5455);
                 let user = self.services.get::<String>("mysql.user")
@@ -233,6 +237,13 @@ impl Config {
     /// Create a database connection pool
     pub async fn create_database_connection(&self) -> anyhow::Result<DatabaseConnection> {
         let database_url = self.build_database_url();
+
+        log::info!("=== Database Connection Debug ===");
+        log::info!("DB_TYPE: {}", self.db_type);
+        log::info!("DATABASE_URL from env: {}", self.database_url);
+        log::info!("URL from build_database_url(): {}", database_url);
+        log::info!("================================");
+
         Database::connect(&database_url)
             .await
             .map_err(|e| anyhow::anyhow!("Failed to connect to database: {}", e))

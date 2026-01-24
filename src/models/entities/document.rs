@@ -12,7 +12,7 @@ use validator::Validate;
 #[sea_orm(table_name = "document")]
 pub struct Model {
     /// Primary key (32 characters)
-    #[sea_orm(primary_key, column_type = "String(Some(32))")]
+    #[sea_orm(primary_key, column_type = "String(StringLen::N(32))")]
     pub id: String,
 
     /// Thumbnail as base64 string (nullable)
@@ -21,16 +21,16 @@ pub struct Model {
     pub thumbnail: Option<String>,
 
     /// Knowledge base ID
-    #[sea_orm(column_type = "String(Some(256))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(256))", indexed)]
     pub kb_id: String,
 
     /// Parser ID (default: "naive")
-    #[sea_orm(column_type = "String(Some(32))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", indexed)]
     #[serde(default = "default_parser_id")]
     pub parser_id: String,
 
     /// Pipeline ID (nullable)
-    #[sea_orm(column_type = "String(Some(32))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", nullable, indexed)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pipeline_id: Option<String>,
 
@@ -40,26 +40,26 @@ pub struct Model {
     pub parser_config: Json,
 
     /// Source type: "local" or other
-    #[sea_orm(column_type = "String(Some(128))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(128))", indexed)]
     #[serde(default = "default_source_type")]
     pub source_type: String,
 
     /// File extension type
-    #[sea_orm(column_type = "String(Some(32))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", indexed)]
     #[validate(length(min = 1, max = 32))]
     pub type_: String,
 
     /// Creator user ID
-    #[sea_orm(column_type = "String(Some(32))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", indexed)]
     pub created_by: String,
 
     /// File name (nullable)
-    #[sea_orm(column_type = "String(Some(255))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(255))", nullable, indexed)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 
     /// Storage location (nullable)
-    #[sea_orm(column_type = "String(Some(255))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(255))", nullable, indexed)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 
@@ -103,17 +103,17 @@ pub struct Model {
     pub meta_fields: Option<Json>,
 
     /// Real file extension suffix
-    #[sea_orm(column_type = "String(Some(32))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", indexed)]
     #[validate(length(min = 1, max = 32))]
     pub suffix: String,
 
     /// Run status: "0" (not started), "1" (running), "2" (canceled)
-    #[sea_orm(column_type = "String(Some(1))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(1))", nullable, indexed)]
     #[serde(default = "default_run_status")]
     pub run: Option<String>,
 
     /// Document status: "0" (wasted), "1" (valid)
-    #[sea_orm(column_type = "String(Some(1))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(1))", nullable, indexed)]
     #[serde(default = "default_doc_status")]
     pub status: Option<String>,
 

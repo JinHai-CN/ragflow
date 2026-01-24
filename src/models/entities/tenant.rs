@@ -12,52 +12,52 @@ use validator::Validate;
 #[sea_orm(table_name = "tenant")]
 pub struct Model {
     /// Primary key (32 characters)
-    #[sea_orm(primary_key, column_type = "String(Some(32))")]
+    #[sea_orm(primary_key, column_type = "String(StringLen::N(32))")]
     pub id: String,
 
     /// Tenant name (nullable)
-    #[sea_orm(column_type = "String(Some(100))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(100))", nullable, indexed)]
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(length(min = 1, max = 100))]
     pub name: Option<String>,
 
     /// Public key for tenant authentication (nullable)
-    #[sea_orm(column_type = "String(Some(255))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(255))", nullable, indexed)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub public_key: Option<String>,
 
     /// Default LLM model ID
-    #[sea_orm(column_type = "String(Some(128))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(128))", indexed)]
     #[validate(length(min = 1, max = 128))]
     pub llm_id: String,
 
     /// Default embedding model ID
-    #[sea_orm(column_type = "String(Some(128))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(128))", indexed)]
     #[validate(length(min = 1, max = 128))]
     pub embd_id: String,
 
     /// Default ASR (Automatic Speech Recognition) model ID
-    #[sea_orm(column_type = "String(Some(128))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(128))", indexed)]
     #[validate(length(min = 1, max = 128))]
     pub asr_id: String,
 
     /// Default image-to-text model ID
-    #[sea_orm(column_type = "String(Some(128))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(128))", indexed)]
     #[validate(length(min = 1, max = 128))]
     pub img2txt_id: String,
 
     /// Default rerank model ID
-    #[sea_orm(column_type = "String(Some(128))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(128))", indexed)]
     #[validate(length(min = 1, max = 128))]
     pub rerank_id: String,
 
     /// Default TTS (Text-to-Speech) model ID (nullable)
-    #[sea_orm(column_type = "String(Some(256))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(256))", nullable, indexed)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tts_id: Option<String>,
 
     /// Document processor IDs (comma-separated)
-    #[sea_orm(column_type = "String(Some(256))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(256))", indexed)]
     #[validate(length(min = 1, max = 256))]
     pub parser_ids: String,
 
@@ -67,7 +67,7 @@ pub struct Model {
     pub credit: i32,
 
     /// Account status: "1" for valid, "0" for invalid (deleted/disabled)
-    #[sea_orm(column_type = "String(Some(1))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(1))", nullable, indexed)]
     #[serde(default = "default_status")]
     pub status: Option<String>,
 

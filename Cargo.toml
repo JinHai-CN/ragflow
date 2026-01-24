@@ -7,7 +7,7 @@ edition = "2021"
 actix-web = "4.0"
 actix-cors = "0.7"
 actix-rt = "2.0"
-tokio = { version = "1.0", features = ["full"] }
+tokio = { version = "1.41", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.9"
@@ -20,15 +20,15 @@ dotenvy = "0.15"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 async-trait = "0.1"
-sea-orm = { version = "0.12", features = ["sqlx-mysql", "sqlx-postgres", "runtime-tokio", "macros", "debug-print"] }
-sqlx = { version = "0.7", features = ["mysql", "postgres", "runtime-tokio"] }
+sea-orm = { version = "1.1.18", features = ["sqlx-mysql", "sqlx-postgres", "runtime-tokio", "macros", "debug-print"] }
 bcrypt = "0.15"
 validator = { version = "0.18", features = ["derive"] }
 sha2 = "0.10"
 rsa = "0.9"
 base64 = "0.21"
+tokio-util = "0.7"
+sqlx = { version = "0.8", features = ["mysql", "runtime-tokio-rustls"] }
 
 [dev-dependencies]
-sea-orm = { version = "0.12", features = ["sqlx-sqlite", "runtime-tokio", "macros", "debug-print"] }
-sqlx = { version = "0.7", features = ["sqlite", "runtime-tokio"] }
+sea-orm = { version = "1.1.19", features = ["runtime-tokio", "macros", "debug-print"] }
 tempfile = "3.10"

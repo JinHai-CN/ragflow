@@ -12,28 +12,28 @@ use validator::Validate;
 #[sea_orm(table_name = "file")]
 pub struct Model {
     /// Primary key (32 characters)
-    #[sea_orm(primary_key, column_type = "String(Some(32))")]
+    #[sea_orm(primary_key, column_type = "String(StringLen::N(32))")]
     pub id: String,
 
     /// Parent folder ID
-    #[sea_orm(column_type = "String(Some(32))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", indexed)]
     pub parent_id: String,
 
     /// Tenant ID
-    #[sea_orm(column_type = "String(Some(32))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", indexed)]
     pub tenant_id: String,
 
     /// Creator user ID
-    #[sea_orm(column_type = "String(Some(32))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", indexed)]
     pub created_by: String,
 
     /// File or folder name
-    #[sea_orm(column_type = "String(Some(255))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(255))", indexed)]
     #[validate(length(min = 1, max = 255))]
     pub name: String,
 
     /// Storage location (nullable)
-    #[sea_orm(column_type = "String(Some(255))", nullable, indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(255))", nullable, indexed)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 
@@ -43,12 +43,12 @@ pub struct Model {
     pub size: i32,
 
     /// File extension type
-    #[sea_orm(column_type = "String(Some(32))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(32))", indexed)]
     #[validate(length(min = 1, max = 32))]
     pub type_: String,
 
     /// Source type (e.g., "knowledgebase", "local")
-    #[sea_orm(column_type = "String(Some(128))", indexed)]
+    #[sea_orm(column_type = "String(StringLen::N(128))", indexed)]
     #[serde(default = "default_source_type")]
     pub source_type: String,
 
