@@ -28,6 +28,7 @@ rsa = "0.9"
 base64 = "0.21"
 tokio-util = "0.7"
 sqlx = { version = "0.8", features = ["mysql", "runtime-tokio-rustls"] }
+openssl = "0.10.75"
 
 [dev-dependencies]
 sea-orm = { version = "1.1.19", features = ["runtime-tokio", "macros", "debug-print"] }
