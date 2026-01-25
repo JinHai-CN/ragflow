@@ -15,7 +15,7 @@ import { useForm } from 'react-hook-form';
 import { z, ZodArray, ZodString } from 'zod';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Input, SearchInput } from '@/components/ui/input';
 
 import { Form, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { t } from 'i18next';
@@ -194,7 +194,7 @@ function CheckboxFormMultiple({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-8 px-5 py-2.5"
+        className="space-y-8 px-5 py-2.5 max-h-[80vh] overflow-auto"
         onReset={() => form.reset()}
       >
         <div className="space-y-4">
@@ -249,36 +249,38 @@ function CheckboxFormMultiple({
               return (
                 <FormItem className="space-y-4" key={x.field}>
                   <div>
-                    <div className="flex justify-between items-center mb-2">
+                    <div className="flex flex-col items-start justify-between mb-2">
                       <FormLabel className="text-text-primary text-sm">
                         {x.label}
                       </FormLabel>
                       {x.canSearch && (
-                        <Input
+                        <SearchInput
                           placeholder={t('common.search') + '...'}
                           value={searchTerms[x.field] || ''}
                           onChange={(e) =>
                             handleSearchChange(x.field, e.target.value)
                           }
-                          className="h-8 w-32 ml-2"
+                          className="h-8 w-full"
                         />
                       )}
                     </div>
                   </div>
-                  {!!filteredItem.list?.length &&
-                    filteredItem.list.map((item) => {
-                      return (
-                        <FilterField
-                          key={item.id}
-                          item={{ ...item }}
-                          parent={{
-                            ...x,
-                            id: x.field,
-                            // field: `${x.field}${item.field ? '.' + item.field : ''}`,
-                          }}
-                        />
-                      );
-                    })}
+                  <div className="space-y-4 max-h-[300px] overflow-auto scrollbar-auto">
+                    {!!filteredItem.list?.length &&
+                      filteredItem.list.map((item) => {
+                        return (
+                          <FilterField
+                            key={item.id}
+                            item={{ ...item }}
+                            parent={{
+                              ...x,
+                              id: x.field,
+                              // field: `${x.field}${item.field ? '.' + item.field : ''}`,
+                            }}
+                          />
+                        );
+                      })}
+                  </div>
                   <FormMessage />
                 </FormItem>
               );
