@@ -196,6 +196,15 @@ func (r *Router) Setup(engine *gin.Engine) {
 			// 	message.GET("/:memory_id/:message_id/content", r.memoryHandler.GetMessageContent)
 			// }
 
+			v1.GET("/chats", r.chatHandler.ListChats)
+
+			v1.GET("/searches", r.searchHandler.ListSearch)
+
+			search := v1.Group("/search")
+			{
+				search.GET("", r.searchHandler.ListSearch)
+			}
+
 			file := v1.Group("/files")
 			{
 				file.POST("", r.fileHandler.UploadFile)
@@ -304,12 +313,6 @@ func (r *Router) Setup(engine *gin.Engine) {
 		connector := authorized.Group("/v1/connector")
 		{
 			connector.GET("/list", r.connectorHandler.ListConnectors)
-		}
-
-		// Search routes
-		search := authorized.Group("/v1/search")
-		{
-			search.POST("/list", r.searchHandler.ListSearchApps)
 		}
 
 		// File routes
