@@ -29,16 +29,13 @@ import (
 	"ragflow/internal/entity/models"
 )
 
-//go:linkname daoModelProviderManager ragflow/internal/dao.modelProviderManager
-var daoModelProviderManager *models.ProviderManager
-
 func setupTenantPermissionTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open("file:"+t.Name()+"?mode=memory&cache=shared"), &gorm.Config{TranslateError: true})
 	if err != nil {
 		t.Fatalf("open sqlite: %v", err)
 	}
-	if err := db.AutoMigrate(append([]interface{}{&entity.UserTenant{}}, permissionChangeLogTestModels()...)...); err != nil {
+	if err = db.AutoMigrate(append([]interface{}{&entity.UserTenant{}}, permissionChangeLogTestModels()...)...); err != nil {
 		t.Fatalf("migrate tenant permission table: %v", err)
 	}
 	originalDB := dao.DB
@@ -154,7 +151,7 @@ func TestDeclineOwnTenantInviteAllowed(t *testing.T) {
 		t.Fatalf("RemoveMember(invitation self-decline) = (%v, %v), want success", code, err)
 	}
 	var membership entity.UserTenant
-	if err := db.Where("user_id = ? AND tenant_id = ?", "invitee-user", "tenant-xyz").Take(&membership).Error; err != nil {
+	if err = db.Where("user_id = ? AND tenant_id = ?", "invitee-user", "tenant-xyz").Take(&membership).Error; err != nil {
 		t.Fatalf("read declined invitation: %v", err)
 	}
 	if membership.Status == nil || *membership.Status != entity.TenantMembershipStatusRejected || membership.Role != "" {
@@ -216,7 +213,6 @@ func TestSetTenantDefaultModels_WithModelID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to init provider manager: %v", err)
 	}
-	daoModelProviderManager = models.GetProviderManager()
 
 	// 2. Migrate tables
 	err = db.AutoMigrate(
