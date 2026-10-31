@@ -82,11 +82,12 @@ func NewMemoryHandler(memoryService *service.MemoryService) *MemoryHandler {
 //  3. Call service layer to create memory
 //  4. Return creation result
 func (h *MemoryHandler) CreateMemory(c *gin.Context) {
-	quotaUser, ok := billingQuotaUser(c)
-	if !ok {
+	user, errorCode, err := billingQuotaUser(c)
+	if err != nil {
+		common.ErrorWithCode(c, errorCode, err.Error())
 		return
 	}
-	if !billingEnforceApps(c, quotaUser.ID) {
+	if !billingEnforceApps(c, user.ID) {
 		return
 	}
 
@@ -101,7 +102,7 @@ func (h *MemoryHandler) CreateMemory(c *gin.Context) {
 
 	// Parse JSON request body
 	var req service.CreateMemoryRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err = c.ShouldBindJSON(&req); err != nil {
 		common.ResponseWithCodeData(c, common.CodeBadRequest, nil, err.Error())
 		return
 	}

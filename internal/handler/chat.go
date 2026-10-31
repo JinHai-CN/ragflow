@@ -145,11 +145,12 @@ func (h *ChatHandler) ListChats(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/chats [post]
 func (h *ChatHandler) Create(c *gin.Context) {
-	quotaUser, ok := billingQuotaUser(c)
-	if !ok {
+	user, errorCode, err := billingQuotaUser(c)
+	if err != nil {
+		common.ErrorWithCode(c, errorCode, err.Error())
 		return
 	}
-	if !billingEnforceApps(c, quotaUser.ID) {
+	if !billingEnforceApps(c, user.ID) {
 		return
 	}
 
@@ -162,7 +163,7 @@ func (h *ChatHandler) Create(c *gin.Context) {
 	var req map[string]interface{}
 	decoder := json.NewDecoder(c.Request.Body)
 	decoder.UseNumber()
-	if err := decoder.Decode(&req); err != nil {
+	if err = decoder.Decode(&req); err != nil {
 		common.ResponseWithCodeData(c, common.CodeArgumentError, nil, err.Error())
 		return
 	}
