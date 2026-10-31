@@ -68,8 +68,6 @@ func NewFileHandler(fileService *file.FileService, userService *service.UserServ
 // @Summary List Files
 // @Description Get list of files under a folder with filtering, pagination and sorting (matches Python /files endpoint)
 // @Tags file
-// @Accept json
-// @Produce json
 // @Param parent_id query string false "parent folder ID (empty means root folder)"
 // @Param tenant_id query string false "tenant whose files are listed (defaults to the current user)"
 // @Param keywords query string false "search keywords (case-insensitive)"
@@ -122,12 +120,12 @@ func (h *FileHandler) ListFiles(c *gin.Context) {
 		}
 	}
 
-	orderby := c.DefaultQuery("orderby", "create_time")
+	orderBy := c.DefaultQuery("orderby", "create_time")
 	desc := true
 	if descStr := c.Query("desc"); descStr != "" {
 		desc = descStr != "false"
 	}
-	terms := orderTermsFromQuery(c, orderby, desc)
+	terms := orderTermsFromQuery(c, orderBy, desc)
 
 	ctx := c.Request.Context()
 	result, err := h.fileService.ListFilesForTenant(ctx, userID, tenantID, parentID, page, pageSize, terms, keywords)
@@ -143,8 +141,6 @@ func (h *FileHandler) ListFiles(c *gin.Context) {
 // @Summary Get Parent Folder
 // @Description Get parent folder of a file by file ID
 // @Tags file
-// @Accept json
-// @Produce json
 // @Param id path string true "file ID"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/files/{id}/parent [get]
@@ -177,8 +173,6 @@ func (h *FileHandler) GetParentFolder(c *gin.Context) {
 // @Summary Get File Ancestors
 // @Description Get all ancestor folders in path from file to root
 // @Tags file
-// @Accept json
-// @Produce json
 // @Param id path string true "file ID"
 // @Param tenant_id query string false "tenant the file belongs to"
 // @Success 200 {object} map[string]interface{}
@@ -226,12 +220,11 @@ type CreateFolderRequest struct {
 // @Description Upload files or create a folder based on content type
 // @Tags file
 // @Accept multipart/form-data, application/json
-// @Produce json
 // @Param parent_id query string false "parent folder ID (for multipart/form-data)"
 // @Param file formData file false "file to upload (for multipart/form-data)"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
-// @Router /v1/file/upload [post]
+// @Router /api/v1/files [POST]
 func (h *FileHandler) UploadFile(c *gin.Context) {
 	startAt := time.Now()
 	operationLog := &common.OperationLog{
@@ -253,6 +246,8 @@ func (h *FileHandler) UploadFile(c *gin.Context) {
 		operationLog.Error = errors.New(errorMessage)
 		return
 	}
+	operationLog.UserID = user.ID
+	operationLog.UserName = user.Email
 
 	userID := user.ID
 
@@ -279,7 +274,7 @@ func (h *FileHandler) UploadFile(c *gin.Context) {
 		if form == nil {
 			common.ResponseWithCodeData(c, common.CodeBadRequest, nil, "No file part!")
 			operationLog.Code = int(common.CodeBadRequest)
-			operationLog.Error = errors.New("no file part!")
+			operationLog.Error = errors.New("no file part")
 			return
 		}
 		var totalSize int64
@@ -415,6 +410,8 @@ func (h *FileHandler) DeleteFiles(c *gin.Context) {
 		operationLog.Error = errors.New(errorMessage)
 		return
 	}
+	operationLog.UserID = user.ID
+	operationLog.UserName = user.Email
 
 	var req DeleteFileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -452,9 +449,6 @@ type MoveFileRequest struct {
 //   - both: move and rename simultaneously
 //
 // @Tags file
-// @Accept json
-// @Produce json
-// @Param body body MoveFileRequest true "Move file request"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/files/move [post]
 func (h *FileHandler) MoveFiles(c *gin.Context) {
@@ -478,6 +472,8 @@ func (h *FileHandler) MoveFiles(c *gin.Context) {
 		operationLog.Error = errors.New(errorMessage)
 		return
 	}
+	operationLog.UserID = user.ID
+	operationLog.UserName = user.Email
 
 	var req MoveFileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -521,7 +517,6 @@ func (h *FileHandler) MoveFiles(c *gin.Context) {
 // @Summary Download File
 // @Description Download a file by ID
 // @Tags file
-// @Accept json
 // @Produce octet-stream
 // @Param file_id path string true "file ID"
 // @Success 200 {file} binary "File stream"
@@ -546,7 +541,8 @@ func (h *FileHandler) Download(c *gin.Context) {
 		operationLog.Error = errors.New(errorMessage)
 		return
 	}
-	userID := user.ID
+	operationLog.UserID = user.ID
+	operationLog.UserName = user.Email
 
 	fileID := c.Param("id")
 	if fileID == "" {
@@ -558,7 +554,7 @@ func (h *FileHandler) Download(c *gin.Context) {
 
 	ctx := c.Request.Context()
 	// Get file metadata and check permission
-	fileContent, err := h.fileService.GetFileContent(ctx, userID, fileID)
+	fileContent, err := h.fileService.GetFileContent(ctx, user.ID, fileID)
 	if err != nil {
 		if respondPermissionErrorIf(c, err, true) {
 			operationLog.Code = int(common.CodePermissionError)
@@ -631,8 +627,6 @@ func (h *FileHandler) Download(c *gin.Context) {
 // as needed. Folder inputs are expanded to their innermost files.
 // The heavy DB work runs in a goroutine; the endpoint returns immediately.
 // @Tags file
-// @Accept json
-// @Produce json
 // @Param request body document.LinkToDatasetsRequest true "file_ids and kb_ids"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/files/link-to-datasets [post]
@@ -657,11 +651,13 @@ func (h *FileHandler) LinkToDatasets(c *gin.Context) {
 		operationLog.Error = errors.New(errorMessage)
 		return
 	}
+	operationLog.UserID = user.ID
+	operationLog.UserName = user.Email
 
 	var req document.LinkToDatasetsRequest
 	// Tolerate bind errors: a malformed or empty body simply leaves the fields
 	// nil, which the validate_request-style check below reports as missing
-	// arguments — matching Python's @validate_request behaviour and code.
+	// arguments — matching Python's @validate_request behavior and code.
 	_ = c.ShouldBindJSON(&req)
 
 	// Mirror Python @validate_request("file_ids", "kb_ids"): a key absent from

@@ -26,7 +26,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -91,14 +90,6 @@ func (h *MemoryHandler) CreateMemory(c *gin.Context) {
 		return
 	}
 
-	// Check if API timing is enabled
-	// If RAGFLOW_API_TIMING environment variable is set, request processing time will be logged
-	timingEnabled := common.GetEnv(common.EnvRAGFlowAPITiming)
-	var tStart time.Time
-	if timingEnabled != "" {
-		tStart = time.Now()
-	}
-
 	// Get current logged-in user information
 	// GetUser is a context value set by the authentication middleware
 	user, errorCode, errorMessage := GetUser(c)
@@ -140,20 +131,11 @@ func (h *MemoryHandler) CreateMemory(c *gin.Context) {
 	}
 
 	// Record request parsing completion time (for timing)
-	tParsed := time.Now()
 	ctx := c.Request.Context()
 
 	// Call service layer to create memory
 	result, err := h.memoryService.CreateMemory(ctx, userID, &req)
 	if err != nil {
-		// Log error if timing is enabled
-		if timingEnabled != "" {
-			totalMs := float64(time.Since(tStart).Microseconds()) / 1000.0
-			parseMs := float64(tParsed.Sub(tStart).Microseconds()) / 1000.0
-			_ = parseMs
-			_ = totalMs
-		}
-
 		errMsg := err.Error()
 		// Determine if it's an argument error and return appropriate error code
 		if isArgumentError(errMsg) {
@@ -164,16 +146,6 @@ func (h *MemoryHandler) CreateMemory(c *gin.Context) {
 		// Other errors return server error
 		common.ResponseWithCodeData(c, common.CodeServerError, nil, errMsg)
 		return
-	}
-
-	// Log success if timing is enabled
-	if timingEnabled != "" {
-		totalMs := float64(time.Since(tStart).Microseconds()) / 1000.0
-		parseMs := float64(tParsed.Sub(tStart).Microseconds()) / 1000.0
-		validateAndDbMs := totalMs - parseMs
-		_ = parseMs
-		_ = validateAndDbMs
-		_ = totalMs
 	}
 
 	// Return success response
