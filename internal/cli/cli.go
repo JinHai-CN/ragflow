@@ -30,6 +30,7 @@ import (
 	"strings"
 
 	"github.com/peterh/liner"
+	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
 	"ragflow/internal/cli/filesystem"
@@ -435,6 +436,184 @@ func ParseArgs(args []string) (*CommandLineConfig, error) {
 	}
 
 	return commandLineConfig, nil
+}
+
+// ParseArgsWithCobra is the cobra-based counterpart of ParseArgs. It builds a
+// *CommandLineConfig from argv using cobra/pflag for flag parsing. Unlike
+// ParseArgs, flag order does not matter: `--api -o json` and `-o json --api`
+// produce the same config, with an explicit -o overriding the mode's default
+// output format. In CommandMode the whole argv becomes the command string;
+// other modes are interactive and carry no command.
+func ParseArgsWithCobra(args []string) (*CommandLineConfig, error) {
+	cfg := &CommandLineConfig{
+		CLIMode:           CommandMode,
+		AdminClientConfig: nil,
+		ShowHelp:          false,
+		ShowVersion:       false,
+		Verbose:           false,
+		Interactive:       false,
+		OutputFormat:      OutputFormatPlain,
+		Command:           nil,
+	}
+
+	// Register our own help flag so cobra does not install its default "-h"
+	// shorthand (-h means --host for this CLI). ParseFlags is used instead of
+	// Execute so cobra does not print help or run completion hooks as a side
+	// effect.
+	root := &cobra.Command{
+		Use:                "ragflow-cli",
+		SilenceUsage:       true,
+		SilenceErrors:      true,
+		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
+	}
+	flags := root.Flags()
+	flags.SetInterspersed(false)
+	showHelp := flags.Bool("help", false, "Show help")
+	showVersion := flags.BoolP("version", "V", false, "Show version")
+	verbose := flags.BoolP("verbose", "v", false, "Verbose output")
+	api := flags.Bool("api", false, "")
+	admin := flags.Bool("admin", false, "")
+	ingestor := flags.Bool("ingestor", false, "")
+	chatter := flags.Bool("chatter", false, "")
+	syncer := flags.Bool("syncer", false, "")
+	output := flags.StringP("output", "o", "", "Output format: plain, json, table")
+	host := flags.StringP("host", "h", "", "Host:port")
+	token := flags.StringP("token", "t", "", "API token")
+	user := flags.StringP("user", "u", "", "User")
+	password := flags.StringP("password", "p", "", "Password")
+	configFile := flags.StringP("config", "f", "", "Config file")
+	keyFile := flags.StringP("key", "k", "", "Key file")
+
+	if err := root.ParseFlags(args); err != nil {
+		return nil, err
+	}
+
+	cfg.ShowHelp = *showHelp
+	cfg.ShowVersion = *showVersion
+	cfg.Verbose = *verbose
+
+	// Mode flags are mutually exclusive; none of them means CommandMode.
+	modes := []struct {
+		name string
+		set  bool
+		mode CommandLineMode
+	}{
+		{"--api", *api, APIMode},
+		{"--admin", *admin, AdminMode},
+		{"--ingestor", *ingestor, IngestorMode},
+		{"--chatter", *chatter, ChatterMode},
+		{"--syncer", *syncer, SyncerMode},
+	}
+	selected := ""
+	for _, m := range modes {
+		if !m.set {
+			continue
+		}
+		if selected != "" {
+			return nil, fmt.Errorf("%s and %s are mutually exclusive", selected, m.name)
+		}
+		selected = m.name
+		cfg.CLIMode, cfg.Interactive, cfg.OutputFormat = m.mode, true, OutputFormatTable
+	}
+
+	// An explicit -o wins over the mode default regardless of where it appeared.
+	if flags.Changed("output") {
+		switch *output {
+		case "plain":
+			cfg.OutputFormat = OutputFormatPlain
+		case "json":
+			cfg.OutputFormat = OutputFormatJSON
+		default:
+			cfg.OutputFormat = OutputFormatTable
+		}
+	}
+
+	configFilePath := "rf.yml"
+	if flags.Changed("config") {
+		configFilePath = *configFile
+		if !filepath.IsAbs(configFilePath) {
+			if abs, err := filepath.Abs(configFilePath); err == nil {
+				configFilePath = abs
+			}
+		}
+	}
+
+	defaultAPI := &APIServerConfig{
+		UserName:     nil,
+		UserPassword: nil,
+		APIKey:       nil,
+	}
+	switch cfg.CLIMode {
+	case CommandMode:
+		apiCfg, err := ReadAPIServerConfig(defaultAPI, configFilePath)
+		if err != nil {
+			return nil, err
+		}
+		cfg.APIClientConfig = apiCfg
+	case APIMode:
+		if flags.Changed("host") {
+			h, p, err := parseHostPort(*host)
+			if err != nil {
+				return nil, fmt.Errorf("invalid host format: %w", err)
+			}
+			defaultAPI.IP, defaultAPI.Port = h, p
+		}
+		if flags.Changed("token") {
+			defaultAPI.APIKey = token
+		}
+		if flags.Changed("user") {
+			defaultAPI.UserName = user
+		}
+		if flags.Changed("password") {
+			defaultAPI.UserPassword = password
+		}
+		if flags.Changed("key") {
+			defaultAPI.KeyFile = keyFile
+		}
+		apiCfg, err := ReadAPIServerConfig(defaultAPI, configFilePath)
+		if err != nil {
+			return nil, err
+		}
+		cfg.APIClientConfig = apiCfg
+	case AdminMode:
+		if flags.Changed("token") {
+			return nil, fmt.Errorf("token is invalid in admin mode")
+		}
+		if flags.Changed("config") {
+			return nil, fmt.Errorf("config is invalid in admin mode")
+		}
+		adminCfg := &AdminModeConfig{
+			AdminHost: "127.0.0.1",
+			AdminPort: 9381,
+		}
+		if flags.Changed("host") {
+			h, p, err := parseHostPort(*host)
+			if err != nil {
+				return nil, fmt.Errorf("invalid host format: %w", err)
+			}
+			adminCfg.AdminHost, adminCfg.AdminPort = h, p
+		}
+		if flags.Changed("user") {
+			adminCfg.AdminName = user
+		}
+		if flags.Changed("password") {
+			adminCfg.AdminPassword = password
+		}
+		if flags.Changed("key") {
+			adminCfg.KeyFile = keyFile
+		}
+		cfg.AdminClientConfig = adminCfg
+	default:
+		return nil, fmt.Errorf("invalid mode: %s", cfg.CLIMode)
+	}
+
+	if cfg.CLIMode == CommandMode && !cfg.ShowHelp && !cfg.ShowVersion {
+		if rest := flags.Args(); len(rest) > 0 {
+			joined := strings.Join(rest, " ")
+			cfg.Command = &joined
+		}
+	}
+	return cfg, nil
 }
 
 // parseHostPort parses a host:port string and returns host and port

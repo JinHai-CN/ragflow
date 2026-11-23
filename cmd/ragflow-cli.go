@@ -31,8 +31,9 @@ import (
 func main() {
 
 	var err error
-	cli.Arguments, err = cli.ParseArgs(os.Args[1:])
+	cli.Arguments, err = cli.ParseArgsWithCobra(os.Args[1:])
 	if err != nil {
+		fmt.Printf("Failed to parse arguments: %v\n", err)
 		return
 	}
 

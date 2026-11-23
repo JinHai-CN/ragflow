@@ -63,7 +63,13 @@ func (p *Parser) parseSingleListFiles() (*Command, error) {
 	p.nextToken() // consume COMMAND
 
 	cmd := NewCommand("single_list_files")
-	cmd.Params["command"] = p.original
+
+	command, err := messageAfterCommandWords(p.original, "ws")
+	if err != nil {
+		return nil, err
+	}
+
+	cmd.Params["command"] = command
 
 	return cmd, nil
 }
