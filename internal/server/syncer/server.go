@@ -21,6 +21,7 @@ package syncer
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"ragflow/internal/common"
 	"ragflow/internal/server"
@@ -31,7 +32,7 @@ import (
 // Run starts the RAGFlow file syncer. It blocks until ctx is cancelled (OS
 // shutdown signal) or the syncer receives a shutdown command from the admin,
 // then gracefully stops the syncer.
-func Run(ctx context.Context, cancel context.CancelFunc, args *bootstrap.ServerArgs) error {
+func Run(ctx context.Context, cancel context.CancelFunc, args *bootstrap.ServerArgs, startTime time.Time) error {
 	globalConfig := server.GetConfig()
 	syncerConfig := globalConfig.GetSyncerConfig()
 	fileSyncer := syncer.NewSyncer(syncerConfig.MaxConcurrentSyncs)

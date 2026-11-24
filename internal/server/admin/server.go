@@ -38,7 +38,7 @@ import (
 
 // Run starts the RAGFlow admin HTTP server. It blocks until ctx is cancelled,
 // then gracefully shuts the HTTP server down.
-func Run(ctx context.Context, args *bootstrap.ServerArgs) error {
+func Run(ctx context.Context, args *bootstrap.ServerArgs, startTime time.Time) error {
 	globalConfig := server.GetConfig()
 
 	adminService := adminapi.NewService()

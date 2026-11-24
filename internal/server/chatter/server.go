@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"time"
 
 	"ragflow/internal/channels"
 	"ragflow/internal/common"
@@ -29,7 +30,7 @@ import (
 )
 
 // Run owns the channel runtime until cancellation, including adapter shutdown.
-func Run(ctx context.Context, args *bootstrap.ServerArgs) error {
+func Run(ctx context.Context, args *bootstrap.ServerArgs, startTime time.Time) error {
 	if !kvrocks.IsEnabled() {
 		return fmt.Errorf("chatter requires Kvrocks for shared channel runtime status")
 	}

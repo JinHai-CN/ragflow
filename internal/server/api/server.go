@@ -47,7 +47,7 @@ import (
 	"ragflow/internal/server/bootstrap"
 )
 
-func Run(ctx context.Context, serverName string, args *bootstrap.ServerArgs, services *bootstrap.AgentServices) error {
+func Run(ctx context.Context, serverName string, args *bootstrap.ServerArgs, services *bootstrap.AgentServices, startTime time.Time) error {
 	if !kvrocks.IsEnabled() {
 		return fmt.Errorf("API requires Kvrocks for shared channel runtime status")
 	}
